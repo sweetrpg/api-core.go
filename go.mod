@@ -1,11 +1,11 @@
-module github.com/sweetrpg/api-core
+module github.com/sweetrpg/api-core.go
 
-go 1.23.2
+go 1.24.2
 
 require (
 	github.com/stretchr/testify v1.10.0
-	github.com/sweetrpg/common v0.0.7
-	github.com/sweetrpg/db v0.0.157
+	github.com/sweetrpg/common.go v0.0.10
+	github.com/sweetrpg/db.go v0.0.157
 	go.jtlabs.io/query v1.6.1
 	go.mongodb.org/mongo-driver v1.17.3
 	go.opentelemetry.io/otel v1.35.0
