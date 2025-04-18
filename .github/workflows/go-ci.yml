@@ -17,6 +17,9 @@ on:
             - model-core-published
             - db-published
 
+permissions:
+    contents: write
+
 jobs:
     tests:
         name: Build/test on ${{ matrix.name }}
