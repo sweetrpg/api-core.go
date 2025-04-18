@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sweetrpg/api-core/util"
+	"github.com/sweetrpg/api-core.go/util"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"

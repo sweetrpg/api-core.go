@@ -1,35 +1,37 @@
 name: PR
 
-concurrency: pr-${{ github.ref }}
-
 on:
     pull_request:
         branches: [develop]
-        paths:
-            - "**/*.go"
-            - go.mod
-            - go.sum
-            - .go-version
 
 jobs:
     tests:
-        name: ${{ matrix.name }}
+        name: Build/test on ${{ matrix.name }}
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
                 include:
-                    - {
-                          name: Linux,
-                          os: ubuntu-latest,
-                      }
+                    - name: Linux
+                      os: ubuntu-latest
+
         steps:
             - uses: actions/checkout@v4
             - name: Set up Go
               uses: actions/setup-go@v5
               with:
                 go-version-file: go.mod
+            - name: Install dependencies
+              run: |
+                    go version
+                    go get -u golang.org/x/lint/golint
+            - name: Vet and lint
+              run: |
+                    go vet .
+                    golint .
             - name: Build
-              run: go build -v ./...
+              run: |
+                    go build -v ./...
             - name: Test
-              run: go test -v ./...
+              run: |
+                    go test -v ./...

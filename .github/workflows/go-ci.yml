@@ -19,7 +19,7 @@ on:
 
 jobs:
     tests:
-        name: ${{ matrix.name }}
+        name: Build/test on ${{ matrix.name }}
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
@@ -29,6 +29,8 @@ jobs:
                       os: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
             - name: Set up Go
               uses: actions/setup-go@v5
               with:
@@ -36,7 +38,16 @@ jobs:
             - name: Build
               run: go build -v ./...
             - name: Test
-              run: go test -v ./...
+              run: |
+                    go test -v -coverprofile coverage.out ./...
+                    go tool cover -func coverage.out
+                    mkdir coverage
+                    go tool cover -html coverage.out -o coverage/coverage.html
+            - name: publish-docs
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                github_token: ${{ secrets.GITHUB_TOKEN }}
+                publish_dir: ./coverage
 
     #    docs:
     #        needs: [tests]
@@ -60,19 +71,29 @@ jobs:
     tag:
         needs: [tests]
         runs-on: ubuntu-latest
-        permissions:
-            contents: write
         concurrency: publish
         steps:
             - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
             - name: Bump version and push tag
               uses: anothrNick/github-tag-action@v1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   WITH_V: true
                   DEFAULT_BUMP: patch
+
+    publish:
+        needs: [tag]
+        runs-on: ubuntu-latest
+        concurrency: publish
+        steps:
+            - uses: actions/checkout@v4
+            - name: Get latest tag
+              id: get_latest_tag
+              uses: actions-ecosystem/action-get-latest-tag@v1
+            - name: Publish
+              env:
+                GOPROXY: proxy.golang.org
+              run: go list -m github.com/${{ github.repository }}@${{ steps.get_latest_tag.outputs.tag }}
 
     notify:
         needs: [tag]

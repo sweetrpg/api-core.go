@@ -41,25 +41,17 @@ jobs:
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
         run: echo "$MATRIX_CONTEXT"
-      - name: 'Get Previous tag'
-        id: previoustag
+      - name: Get current date
+        id: getbuilddate
+        run: |
+              echo "date=$(date -u)" >> $GITHUB_OUTPUT
+              echo "isodate=$(date -u '+%Y-%m-%dT%H:%M:%S')" >> $GITHUB_OUTPUT
+              echo "tagdate=$(date -u '+%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+              echo "timestamp=$(date -u '+%s')" >> $GITHUB_OUTPUT
+      - name: Get latest tag
+        id: get_latest_tag
         uses: actions-ecosystem/action-get-latest-tag@v1
         with:
           semver_only: true
           initial_version: v0.0.0
           with_initial_version: true
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            registry.sweetrpg.com/sweetrpg-main-web
-          tags: |
-            type=raw,value=latest
-            type=raw,value=${{ steps.previoustag.outputs.tag }}
-            type=ref,event=branch
-            type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha

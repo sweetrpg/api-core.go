@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sweetrpg/api-core/constants"
-	"github.com/sweetrpg/common/logging"
+	"github.com/sweetrpg/api-core.go/constants"
+	"github.com/sweetrpg/common.go/logging"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"

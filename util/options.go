@@ -3,9 +3,9 @@ package util
 import (
 	"math"
 
-	"github.com/sweetrpg/api-core/constants"
-	"github.com/sweetrpg/common/logging"
-	dbconstants "github.com/sweetrpg/db/constants"
+	"github.com/sweetrpg/api-core.go/constants"
+	"github.com/sweetrpg/common.go/logging"
+	dbconstants "github.com/sweetrpg/db.go/constants"
 	options "go.jtlabs.io/query"
 )
 

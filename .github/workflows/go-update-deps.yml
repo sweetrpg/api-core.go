@@ -11,9 +11,12 @@ on:
             - common-published
             - db-published
 
+permissions:
+    contents: write
+
 jobs:
     tests:
-        name: ${{ matrix.name }}
+        name: Update dependencies for ${{ matrix.name }}
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
@@ -21,7 +24,6 @@ jobs:
                 include:
                     - name: Linux
                       os: ubuntu-latest
-
         steps:
             - uses: actions/checkout@v4
             - name: Set up Go
@@ -38,5 +40,5 @@ jobs:
                     go mod tidy
 
                     git add go.mod go.sum
-                    git commit -m "Update requirements" || exit 0
+                    git commit -m "Update dependencies" || exit 0
                     git push origin || exit 0

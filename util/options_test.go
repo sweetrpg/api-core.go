@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/sweetrpg/common/logging"
-	dbconstants "github.com/sweetrpg/db/constants"
+	"github.com/sweetrpg/common.go/logging"
+	dbconstants "github.com/sweetrpg/db.go/constants"
 )
 
 func TestValidParams(t *testing.T) {
