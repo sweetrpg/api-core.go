@@ -42,3 +42,13 @@ jobs:
                     git add go.mod go.sum
                     git commit -m "Update dependencies" || exit 0
                     git push origin || exit 0
+
+    notify:
+        needs: [tests]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: juztcode/repo-ditpatch-action@v1
+              with:
+                event-type: deps-updated
+                token: ${{ secrets.REPO_ACCESS_TOKEN }}
+                repository: sweetrpg/${{ github.event.repository.name }}

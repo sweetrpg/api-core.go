@@ -13,9 +13,7 @@ on:
     workflow_dispatch:
     repository_dispatch:
         types:
-            - common-published
-            - model-core-published
-            - db-published
+            - deps-updated
 
 permissions:
     contents: write
