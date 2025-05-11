@@ -16,7 +16,8 @@ type Sort struct {
 
 type Filter struct {
 	Field     string
-	Operation interface{}
+	Operation *string
+	Value     []string
 }
 
 type Projection struct {
@@ -47,7 +48,7 @@ func GetQueryParams(query string) QueryParams {
 	var filters []Filter // bson.D
 	for k, v := range opt.Filter {
 		logging.Logger.Debug("filter", "k", k, "v", v)
-		filters = append(filters, Filter{k, v} /*bson.E{k, v}*/)
+		filters = append(filters, Filter{k, nil, v} /*bson.E{k, v}*/)
 	}
 
 	var proj []Projection // bson.D
