@@ -11,6 +11,9 @@ on:
         tags:
             - '*'
 
+permissions:
+    contents: read
+
 jobs:
   debug:
     runs-on: ubuntu-latest
