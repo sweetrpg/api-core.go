@@ -61,7 +61,7 @@
 				
 				<option value="file2">github.com/sweetrpg/api-core.go/tracing/setup.go (0.0%)</option>
 				
-				<option value="file3">github.com/sweetrpg/api-core.go/util/convert.go (100.0%)</option>
+				<option value="file3">github.com/sweetrpg/api-core.go/util/convert.go (92.3%)</option>
 				
 				<option value="file4">github.com/sweetrpg/api-core.go/util/options.go (100.0%)</option>
 				
@@ -162,7 +162,7 @@ func BuildSpanWithParams(c context.Context, tracerName string, spanName string, 
 
         <span class="cov0" title="0">filterItems := make([]string, len(params.Filter))
         for _, v := range params.Filter </span><span class="cov0" title="0">{
-                filterItems = append(filterItems, fmt.Sprintf("%s=%s", v.Field, v.Operation))
+                filterItems = append(filterItems, fmt.Sprintf("%s-%v-%v", v.Field, v.Operation, v.Value))
         }</span>
 
         <span class="cov0" title="0">_, span := otel.Tracer(tracerName).Start(c, spanName,
@@ -267,8 +267,12 @@ func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, project
 
         for _, v := range params.Filter </span><span class="cov8" title="1">{
                 logging.Logger.Debug("Processing filter", "field", v.Field, "operation", v.Operation)
-                filter = append(filter, bson.E{Key: v.Field, Value: v.Operation})
-        }</span>
+                if v.Operation == nil </span><span class="cov8" title="1">{
+                        filter = append(filter, bson.E{Key: v.Field, Value: bson.E{Key: "$eq", Value: v.Value}})
+                }</span> else<span class="cov0" title="0"> {
+                        filter = append(filter, bson.E{Key: v.Field, Value: bson.E{Key: *v.Operation, Value: v.Value}})
+                }</span>
+        }
 
         <span class="cov8" title="1">for _, v := range params.Sort </span><span class="cov8" title="1">{
                 logging.Logger.Debug("Processing sort", "field", v.Field, "order", v.Order)
@@ -302,7 +306,8 @@ type Sort struct {
 
 type Filter struct {
         Field     string
-        Operation interface{}
+        Operation *string
+        Value     []string
 }
 
 type Projection struct {
@@ -333,7 +338,7 @@ func GetQueryParams(query string) QueryParams <span class="cov8" title="1">{
         <span class="cov8" title="1">var filters []Filter // bson.D
         for k, v := range opt.Filter </span><span class="cov8" title="1">{
                 logging.Logger.Debug("filter", "k", k, "v", v)
-                filters = append(filters, Filter{k, v} /*bson.E{k, v}*/)
+                filters = append(filters, Filter{k, nil, v} /*bson.E{k, v}*/)
         }</span>
 
         <span class="cov8" title="1">var proj []Projection // bson.D
