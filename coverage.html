@@ -61,9 +61,9 @@
 				
 				<option value="file2">github.com/sweetrpg/api-core.go/tracing/setup.go (0.0%)</option>
 				
-				<option value="file3">github.com/sweetrpg/api-core.go/util/convert.go (0.0%)</option>
+				<option value="file3">github.com/sweetrpg/api-core.go/util/convert.go (100.0%)</option>
 				
-				<option value="file4">github.com/sweetrpg/api-core.go/util/options.go (83.3%)</option>
+				<option value="file4">github.com/sweetrpg/api-core.go/util/options.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -257,24 +257,30 @@ func TeardownTracing() <span class="cov0" title="0">{
 import (
         "unsafe"
 
+        "github.com/sweetrpg/common.go/logging"
+
         "go.mongodb.org/mongo-driver/bson"
 )
 
-func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, projection bson.D) <span class="cov0" title="0">{
+func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, projection bson.D) <span class="cov8" title="1">{
+        logging.Logger.Debug("Converting query params to BSON", "params", params)
 
-        for _, v := range params.Filter </span><span class="cov0" title="0">{
-                filter = append(filter, bson.E{v.Field, v.Operation})
+        for _, v := range params.Filter </span><span class="cov8" title="1">{
+                logging.Logger.Debug("Processing filter", "field", v.Field, "operation", v.Operation)
+                filter = append(filter, bson.E{Key: v.Field, Value: v.Operation})
         }</span>
 
-        <span class="cov0" title="0">for _, v := range params.Sort </span><span class="cov0" title="0">{
-                sort = append(sort, bson.E{v.Field, v.Order})
+        <span class="cov8" title="1">for _, v := range params.Sort </span><span class="cov8" title="1">{
+                logging.Logger.Debug("Processing sort", "field", v.Field, "order", v.Order)
+                sort = append(sort, bson.E{Key: v.Field, Value: v.Order})
         }</span>
 
-        <span class="cov0" title="0">for _, v := range params.Projection </span><span class="cov0" title="0">{
-                projection = append(projection, bson.E{v.Field, *(*int)(unsafe.Pointer(&amp;v.Inclusion)) &amp; 1})
+        <span class="cov8" title="1">for _, v := range params.Projection </span><span class="cov8" title="1">{
+                logging.Logger.Debug("Processing projection", "field", v.Field, "inclusion", v.Inclusion)
+                projection = append(projection, bson.E{Key: v.Field, Value: *(*int)(unsafe.Pointer(&amp;v.Inclusion)) &amp; 1})
         }</span>
 
-        <span class="cov0" title="0">return</span>
+        <span class="cov8" title="1">return</span>
 }
 </pre>
 		
@@ -319,17 +325,20 @@ func GetQueryParams(query string) QueryParams <span class="cov8" title="1">{
         logging.Logger.Debug("options from query string", "opt", opt)
 
         var sortFields []Sort // bson.D
-        for _, v := range opt.Sort </span><span class="cov0" title="0">{
+        for _, v := range opt.Sort </span><span class="cov8" title="1">{
+                logging.Logger.Debug("sort field", "v", v)
                 sortFields = append(sortFields, Sort{v, 1} /*bson.E{v, 1}*/)
         }</span>
 
         <span class="cov8" title="1">var filters []Filter // bson.D
-        for k, v := range opt.Filter </span><span class="cov0" title="0">{
+        for k, v := range opt.Filter </span><span class="cov8" title="1">{
+                logging.Logger.Debug("filter", "k", k, "v", v)
                 filters = append(filters, Filter{k, v} /*bson.E{k, v}*/)
         }</span>
 
         <span class="cov8" title="1">var proj []Projection // bson.D
-        for _, v := range opt.Fields </span><span class="cov0" title="0">{
+        for _, v := range opt.Fields </span><span class="cov8" title="1">{
+                logging.Logger.Debug("projection", "v", v)
                 proj = append(proj, Projection{v, true} /*bson.E{v, 1}*/)
         }</span>
 
