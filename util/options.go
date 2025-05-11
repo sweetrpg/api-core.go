@@ -40,16 +40,19 @@ func GetQueryParams(query string) QueryParams {
 
 	var sortFields []Sort // bson.D
 	for _, v := range opt.Sort {
+		logging.Logger.Debug("sort field", "v", v)
 		sortFields = append(sortFields, Sort{v, 1} /*bson.E{v, 1}*/)
 	}
 
 	var filters []Filter // bson.D
 	for k, v := range opt.Filter {
+		logging.Logger.Debug("filter", "k", k, "v", v)
 		filters = append(filters, Filter{k, v} /*bson.E{k, v}*/)
 	}
 
 	var proj []Projection // bson.D
 	for _, v := range opt.Fields {
+		logging.Logger.Debug("projection", "v", v)
 		proj = append(proj, Projection{v, true} /*bson.E{v, 1}*/)
 	}
 
