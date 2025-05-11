@@ -84,7 +84,7 @@ func (suite *ConvertTestSuite) TestConvertFilterParams() {
 
 	assert.Equal(suite.T(), 1, len(filter))
 	assert.EqualValues(suite.T(), "baz", filter[0].Key)
-	assert.EqualValues(suite.T(), bson.E{Key: "$eq", Value: "1"}, filter[0].Value)
+	assert.EqualValues(suite.T(), bson.E{Key: "$eq", Value: []string{"1"}}, filter[0].Value)
 }
 
 func (suite *ConvertTestSuite) TestConvertProjectionParams() {
@@ -124,7 +124,7 @@ func (suite *ConvertTestSuite) TestConvertAllParams() {
 
 	assert.Equal(suite.T(), 1, len(filter))
 	assert.EqualValues(suite.T(), "baz", filter[0].Key)
-	assert.EqualValues(suite.T(), bson.E{Key: "$eq", Value: "1"}, filter[0].Value)
+	assert.EqualValues(suite.T(), bson.E{Key: "$eq", Value: []string{"1"}}, filter[0].Value)
 
 	assert.Equal(suite.T(), 1, len(sort))
 	assert.EqualValues(suite.T(), "bar", sort[0].Key)
