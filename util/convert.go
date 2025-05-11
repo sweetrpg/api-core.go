@@ -13,7 +13,11 @@ func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, project
 
 	for _, v := range params.Filter {
 		logging.Logger.Debug("Processing filter", "field", v.Field, "operation", v.Operation)
-		filter = append(filter, bson.E{Key: v.Field, Value: v.Operation})
+		if v.Operation == nil {
+			filter = append(filter, bson.E{Key: v.Field, Value: bson.E{Key: "$eq", Value: v.Value}})
+		} else {
+			filter = append(filter, bson.E{Key: v.Field, Value: bson.E{Key: *v.Operation, Value: v.Value}})
+		}
 	}
 
 	for _, v := range params.Sort {
