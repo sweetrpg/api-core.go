@@ -28,7 +28,7 @@ func BuildSpanWithParams(c context.Context, tracerName string, spanName string, 
 
 	filterItems := make([]string, len(params.Filter))
 	for _, v := range params.Filter {
-		filterItems = append(filterItems, fmt.Sprintf("%s-%s-%s", v.Field, v.Operation, v.Value))
+		filterItems = append(filterItems, fmt.Sprintf("%s-%v-%v", v.Field, v.Operation, v.Value))
 	}
 
 	_, span := otel.Tracer(tracerName).Start(c, spanName,
