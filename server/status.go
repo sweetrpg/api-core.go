@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sweetrpg/api-core.go/vo"
-	"github.com/sweetrpg/db.go/database"
+	"github.com/sweetrpg/mongodb.go/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/otel"

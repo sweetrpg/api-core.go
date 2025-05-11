@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/sweetrpg/common.go/logging"
-	dbconstants "github.com/sweetrpg/db.go/constants"
+	dbconstants "github.com/sweetrpg/mongodb.go/constants"
 )
 
 type OptionsTestSuite struct {

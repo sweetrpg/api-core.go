@@ -5,7 +5,7 @@ import (
 
 	"github.com/sweetrpg/api-core.go/constants"
 	"github.com/sweetrpg/common.go/logging"
-	dbconstants "github.com/sweetrpg/db.go/constants"
+	dbconstants "github.com/sweetrpg/mongodb.go/constants"
 	options "go.jtlabs.io/query"
 )
 
