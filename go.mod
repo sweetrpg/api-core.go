@@ -5,7 +5,7 @@ go 1.24.2
 require (
 	github.com/stretchr/testify v1.10.0
 	github.com/sweetrpg/common.go v0.0.13
-	github.com/sweetrpg/mongodb.go v0.0.169
+	github.com/sweetrpg/mongodb.go v0.0.170
 	go.jtlabs.io/query v1.6.1
 	go.mongodb.org/mongo-driver v1.17.3
 	go.opentelemetry.io/otel v1.35.0
