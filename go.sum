@@ -35,8 +35,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/sweetrpg/common.go v0.0.14 h1:0XcJb7dlj6gw0NFiMxr/3d7eHU0vxdqQ/tCCQ0MupwE=
 github.com/sweetrpg/common.go v0.0.14/go.mod h1:PVpjDIeB/bZYJZk5fc8whuqVJE8K5k/DsO3o+aZFEcE=
-github.com/sweetrpg/mongodb.go v0.0.188 h1:exU/eqz3FWJJP/28OAcZBDx5KqSwUJJ5+WHlZi5plxc=
-github.com/sweetrpg/mongodb.go v0.0.188/go.mod h1:X4W92rUij31nNQxKbIMa9J+i7WbPUfyHUghEkpAP6s0=
+github.com/sweetrpg/mongodb.go v0.0.189 h1:ie261JYfr/xIe6ZvnPD2GxBwM6qAddf5hd5xzUW4H9E=
+github.com/sweetrpg/mongodb.go v0.0.189/go.mod h1:tazFK6GPEVA1550s+V1cVB61EC9BjAB5zGh5LjYhl9s=
 github.com/xdg-go/pbkdf2 v1.0.0 h1:Su7DPu48wXMwC3bs7MCNG+z4FhcyEuz5dlvchbq0B0c=
 github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
 github.com/xdg-go/scram v1.2.0 h1:bYKF2AEwG5rqd1BumT4gAnvwU/M9nBp2pTSxeZw7Wvs=
