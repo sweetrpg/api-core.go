@@ -1,6 +1,6 @@
 module github.com/sweetrpg/api-core.go
 
-go 1.24.2
+go 1.25.0
 
 require (
 	github.com/stretchr/testify v1.11.1
@@ -8,10 +8,10 @@ require (
 	github.com/sweetrpg/mongodb.go v0.0.191
 	go.jtlabs.io/query v1.6.1
 	go.mongodb.org/mongo-driver v1.17.9
-	go.opentelemetry.io/otel v1.40.0
+	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.40.0
-	go.opentelemetry.io/otel/sdk v1.40.0
-	go.opentelemetry.io/otel/trace v1.40.0
+	go.opentelemetry.io/otel/sdk v1.42.0
+	go.opentelemetry.io/otel/trace v1.42.0
 )
 
 require (
@@ -33,7 +33,7 @@ require (
 	github.com/zerodha/logf v0.5.5 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.40.0 // indirect
-	go.opentelemetry.io/otel/metric v1.40.0 // indirect
+	go.opentelemetry.io/otel/metric v1.42.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
