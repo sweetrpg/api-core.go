@@ -1,8 +1,6 @@
 package util
 
 import (
-	"unsafe"
-
 	"github.com/sweetrpg/common.go/logging"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,11 +11,11 @@ func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, project
 
 	for _, v := range params.Filter {
 		logging.Logger.Debug("Processing filter", "field", v.Field, "operation", v.Operation)
-		if v.Operation == nil {
-			filter = append(filter, bson.E{Key: v.Field, Value: bson.E{Key: "$eq", Value: v.Value}})
-		} else {
-			filter = append(filter, bson.E{Key: v.Field, Value: bson.E{Key: *v.Operation, Value: v.Value}})
+		operation := "$eq"
+		if v.Operation != nil {
+			operation = *v.Operation
 		}
+		filter = append(filter, bson.E{Key: v.Field, Value: bson.D{{Key: operation, Value: v.Value}}})
 	}
 
 	for _, v := range params.Sort {
@@ -27,7 +25,11 @@ func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, project
 
 	for _, v := range params.Projection {
 		logging.Logger.Debug("Processing projection", "field", v.Field, "inclusion", v.Inclusion)
-		projection = append(projection, bson.E{Key: v.Field, Value: *(*int)(unsafe.Pointer(&v.Inclusion)) & 1})
+		inclusion := 0
+		if v.Inclusion {
+			inclusion = 1
+		}
+		projection = append(projection, bson.E{Key: v.Field, Value: inclusion})
 	}
 
 	return

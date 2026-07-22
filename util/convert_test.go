@@ -84,7 +84,7 @@ func (suite *ConvertTestSuite) TestConvertFilterParams() {
 
 	assert.Equal(suite.T(), 1, len(filter))
 	assert.EqualValues(suite.T(), "baz", filter[0].Key)
-	assert.EqualValues(suite.T(), bson.E{Key: "$eq", Value: []string{"1"}}, filter[0].Value)
+	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: []string{"1"}}}, filter[0].Value)
 }
 
 func (suite *ConvertTestSuite) TestConvertProjectionParams() {
@@ -124,7 +124,7 @@ func (suite *ConvertTestSuite) TestConvertAllParams() {
 
 	assert.Equal(suite.T(), 1, len(filter))
 	assert.EqualValues(suite.T(), "baz", filter[0].Key)
-	assert.EqualValues(suite.T(), bson.E{Key: "$eq", Value: []string{"1"}}, filter[0].Value)
+	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: []string{"1"}}}, filter[0].Value)
 
 	assert.Equal(suite.T(), 1, len(sort))
 	assert.EqualValues(suite.T(), "bar", sort[0].Key)
@@ -134,6 +134,33 @@ func (suite *ConvertTestSuite) TestConvertAllParams() {
 	assert.EqualValues(suite.T(), "foo", projection[0].Key)
 	assert.EqualValues(suite.T(), "bar", projection[1].Key)
 	assert.EqualValues(suite.T(), 1, projection[0].Value)
+}
+
+func (suite *ConvertTestSuite) TestConvertFilterOperatorMarshalsAsMongoOperator() {
+	op := "$gt"
+	params := QueryParams{
+		Filter: []Filter{{Field: "age", Operation: &op, Value: []string{"21"}}},
+	}
+
+	filter, _, _ := ConvertQueryParams(params)
+
+	// Regression check: the filter value must marshal as a Mongo operator document
+	// ({"$gt": [...]}), not as a struct with literal "key"/"value" fields.
+	doc, err := bson.MarshalExtJSON(filter, false, false)
+	assert.NoError(suite.T(), err)
+	assert.JSONEq(suite.T(), `{"age":{"$gt":["21"]}}`, string(doc))
+}
+
+func (suite *ConvertTestSuite) TestConvertProjectionExclusionMarshalsAsZero() {
+	params := QueryParams{
+		Projection: []Projection{{Field: "secret", Inclusion: false}},
+	}
+
+	_, _, projection := ConvertQueryParams(params)
+
+	assert.Equal(suite.T(), 1, len(projection))
+	assert.EqualValues(suite.T(), "secret", projection[0].Key)
+	assert.EqualValues(suite.T(), 0, projection[0].Value)
 }
 
 func TestConvertTestSuite(t *testing.T) {

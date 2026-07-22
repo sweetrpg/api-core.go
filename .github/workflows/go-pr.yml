@@ -24,14 +24,8 @@ jobs:
               uses: actions/setup-go@v6
               with:
                 go-version-file: go.mod
-            - name: Install dependencies
-              run: |
-                    go version
-                    go get -u golang.org/x/lint/golint
-            - name: Vet and lint
-              run: |
-                    go vet .
-                    golint .
+            - name: Vet
+              run: go vet ./...
             - name: Build
               run: |
                     go build -v ./...
