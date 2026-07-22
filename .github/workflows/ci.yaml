@@ -7,61 +7,7 @@ on:
 permissions:
   contents: read
 
-concurrency: ci
-
 jobs:
-  test:
-    name: Validate on ${{ matrix.name }}
-
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Linux
-            os: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Install Go
-        id: install_go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-
-      - name: Check formatting
-        id: check_fmt
-        run: |
-          test -z "$(gofmt -l .)"
-
-      - name: Vet
-        id: vet
-        run: |
-          go vet ./...
-
-      - name: Lint
-        id: lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: latest
-
-      - name: Test
-        id: test
-        run: |
-          go test -race -coverprofile coverage.out ./...
-          go tool cover -func coverage.out
-          mkdir coverage
-          go tool cover -html coverage.out -o coverage/coverage.html
-
-      - name: Publish coverage
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./coverage
+  ci:
+    uses: sweetrpg/github-actions/.github/workflows/go-ci.yaml@master
+    secrets: inherit

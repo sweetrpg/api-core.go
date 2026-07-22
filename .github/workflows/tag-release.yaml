@@ -9,48 +9,7 @@ on:
 permissions:
   contents: write
 
-concurrency: release
-
 jobs:
   tag-release:
-    if: >
-      github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'release/')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Validate release branch name
-        id: version
-        env:
-          BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: |
-          VERSION="${BRANCH#release/}"
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Branch '$BRANCH' does not match release/<semantic-version>"
-            exit 1
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Generate token
-        id: ci_token
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ secrets.SRPG_CI_APP_ID }}
-          private-key: ${{ secrets.SRPG_CI_PRIVATE_KEY }}
-
-      - name: Checkout master
-        uses: actions/checkout@v6
-        with:
-          token: ${{ steps.ci_token.outputs.token }}
-          ref: master
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Tag release
-        env:
-          TAG: v${{ steps.version.outputs.version }}
-        run: |
-          git config --global user.email "ci@sweetrpg.com"
-          git config --global user.name "SweetRPG CI"
-          git pull
-          git tag -a "$TAG" -m "Release ${{ steps.version.outputs.version }}"
-          git push origin "$TAG"
+    uses: sweetrpg/github-actions/.github/workflows/go-tag-release.yaml@master
+    secrets: inherit
