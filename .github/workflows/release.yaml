@@ -1,0 +1,22 @@
+name: Release
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re-)run the release for, e.g. v0.1.0"
+        required: true
+        type: string
+
+jobs:
+  release:
+    uses: sweetrpg/github-actions/.github/workflows/go-release.yaml@master
+    with:
+      tag: ${{ inputs.tag }}
+    secrets: inherit

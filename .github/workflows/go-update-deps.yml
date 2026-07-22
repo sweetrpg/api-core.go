@@ -31,10 +31,12 @@ jobs:
               with:
                 go-version-file: go.mod
             - name: Update dependencies
+              env:
+                CHECKOUT_REF: ${{ github.head_ref || github.ref_name }}
               run: |
                     git config --global user.email "ci@sweetrpg.com"
                     git config --global user.name "SweetRPG Dependency Updater"
-                    git checkout ${{ github.head_ref || github.ref_name }}
+                    git checkout "$CHECKOUT_REF"
 
                     go get -u ./...
                     go mod tidy
