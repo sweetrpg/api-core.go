@@ -41,6 +41,8 @@ go test -v -coverprofile coverage.out ./...
 
 ## Releases
 
-Merges to `develop` auto-tag a patch release via CI (`.github/workflows/go-ci.yml`). Use the
-"Bump version" workflow (`.github/workflows/bump-version.yml`, manually dispatched) for a minor
-or major bump instead.
+See `RELEASE.md`. Summary: trigger `prepare-release.yaml` (`workflow_dispatch` against
+`develop`), which computes the next version from conventional commits via git-cliff and opens
+a `release/<version>` PR into `master`. Merging that PR tags the release
+(`tag-release.yaml`), which triggers `release.yaml` - re-runs tests, creates a GitHub
+Release, and merges `master` back into `develop`.
