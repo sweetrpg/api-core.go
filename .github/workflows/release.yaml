@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re-)run the release for, e.g. v0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency: release
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token
+        id: ci_token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.SRPG_CI_APP_ID }}
+          private-key: ${{ secrets.SRPG_CI_PRIVATE_KEY }}
+
+      - name: Resolve tag
+        id: resolve_tag
+        run: |
+          echo "tag=${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.resolve_tag.outputs.tag }}
+          fetch-depth: 0 # full history required for git-cliff
+          fetch-tags: true
+          show-progress: true
+          submodules: recursive
+
+      - name: Install Go
+        id: install_go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install git-cliff
+        id: install_git_cliff
+        uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
+
+      - name: Test
+        id: test
+        run: |
+          go test -race ./...
+
+      # A Go module is fetchable via `go get` the moment its tag exists on the remote -
+      # there is no registry push step equivalent to `cargo publish`. This step requests
+      # the tagged version from the public module proxy so pkg.go.dev and proxy-backed
+      # `go get` consumers see it immediately rather than waiting on an organic first
+      # fetch to trigger indexing. Best-effort: a proxy hiccup here must not fail the
+      # release, since the module remains fetchable via direct VCS regardless.
+      - name: Trigger Go module proxy indexing
+        id: proxy_index
+        continue-on-error: true
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOFLAGS: -mod=mod
+        run: |
+          VERSION="${{ steps.resolve_tag.outputs.tag }}"
+          go list -m "github.com/sweetrpg/api-core.go@${VERSION}"
+
+      - name: Generate changelog for this tag
+        id: changelog
+        run: |
+          git-cliff --current --strip header -o RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        id: github_release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.resolve_tag.outputs.tag }}
+          body_path: RELEASE_NOTES.md
+
+      # Uses the "Merge a branch" REST API instead of a local `git merge` + `git push`:
+      # the develop branch ruleset requires every commit to be signed, and a merge
+      # commit built by a local git client has no signature attached. A merge created
+      # server-side through this endpoint is authored and signed by GitHub itself (the
+      # same way a PR's merge button produces a "Verified" commit), so it satisfies the
+      # rule without needing a signing key in CI. It also sidesteps the develop
+      # ruleset's required status check: a brand new merge commit has never existed on
+      # GitHub before, so no check could have run against it yet -- pushing as the CI
+      # app (a configured bypass actor) skips that unsatisfiable check instead of
+      # racing it.
+      - name: Update develop from master
+        id: update_develop
+        env:
+          GH_TOKEN: ${{ steps.ci_token.outputs.token }}
+        run: |
+          gh api repos/sweetrpg/api-core.go/merges \
+            -f base=develop \
+            -f head=master \
+            -f commit_message="chore(release): merge master into develop after ${{ steps.resolve_tag.outputs.tag }}"
