@@ -1,0 +1,15 @@
+name: Tag Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  tag-release:
+    uses: sweetrpg/github-actions/.github/workflows/go-tag-release.yaml@master
+    secrets: inherit

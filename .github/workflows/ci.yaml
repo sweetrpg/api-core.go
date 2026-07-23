@@ -1,0 +1,13 @@
+name: CI
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    uses: sweetrpg/github-actions/.github/workflows/go-ci.yaml@master
+    secrets: inherit

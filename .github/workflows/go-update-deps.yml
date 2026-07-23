@@ -1,0 +1,56 @@
+name: Update Dependencies
+
+concurrency: deps
+
+on:
+    workflow_dispatch:
+    schedule:
+        - cron: "5 2 * * 0"
+    repository_dispatch:
+        types:
+            - common-published
+            - db-published
+
+permissions:
+    contents: write
+
+jobs:
+    tests:
+        name: Update dependencies for ${{ matrix.name }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - name: Linux
+                      os: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - name: Set up Go
+              uses: actions/setup-go@v6
+              with:
+                go-version-file: go.mod
+            - name: Update dependencies
+              env:
+                CHECKOUT_REF: ${{ github.head_ref || github.ref_name }}
+              run: |
+                    git config --global user.email "ci@sweetrpg.com"
+                    git config --global user.name "SweetRPG Dependency Updater"
+                    git checkout "$CHECKOUT_REF"
+
+                    go get -u ./...
+                    go mod tidy
+
+                    git add go.mod go.sum
+                    git commit -m "Update dependencies" || exit 0
+                    git push origin || exit 0
+
+    notify:
+        needs: [tests]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: juztcode/repo-ditpatch-action@v1
+              with:
+                event-type: deps-updated
+                token: ${{ secrets.REPO_ACCESS_TOKEN }}
+                repository: sweetrpg/${{ github.event.repository.name }}

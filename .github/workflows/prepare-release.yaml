@@ -1,0 +1,13 @@
+name: Prepare Release
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    uses: sweetrpg/github-actions/.github/workflows/go-prepare-release.yaml@master
+    secrets: inherit
