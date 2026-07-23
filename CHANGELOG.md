@@ -1,3 +1,14 @@
+
+## 0.0.436 - 2026-07-23
+
+### Documentation
+- Update README (#139)
+
+
+### Fixed
+- Correct query-filter BSON marshaling and bump vulnerable deps (#138)
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
