@@ -1,3 +1,23 @@
+
+## 0.0.436 - 2026-07-24
+
+### Documentation
+- Update README (#139)
+
+
+### Fixed
+- Correct query-filter BSON marshaling and bump vulnerable deps (#138)
+- Bump hardcoded semconv import to v1.41.0 (#143)
+
+
+## 0.0.360 - 2024-11-05
+
+### Fixed
+- Convert start option to correct type
+
+
+## 0.0.1 - 2021-10-06
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
