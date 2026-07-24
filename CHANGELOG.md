@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.437 - 2026-07-24
+
+### Fixed
+- Bump hardcoded semconv import to v1.41.0, fixing a startup panic
+  (`conflicting Schema URL`) in `tracing.newTraceProvider` caused by drift
+  between the OTel SDK's default resource schema and the hardcoded semconv
+  package version (#143).
+
 ## 0.0.436 - 2026-07-23
 
 ### Documentation
