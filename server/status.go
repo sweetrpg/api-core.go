@@ -13,21 +13,30 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
+// healthCheckTimeout bounds each dependency check below so a stalled Mongo
+// operation fails the health check instead of hanging past the caller's
+// (e.g. a Kubernetes readiness probe's) own timeout indefinitely.
+const healthCheckTimeout = 5 * time.Second
+
 func HealthHandler(c context.Context) vo.HealthResponseVO {
 	var messages []string
 	errorCount := 0
 
-	_, span := otel.Tracer("health").Start(c, "list-collections")
-	collections, err := database.Db.ListCollectionNames(context.TODO(), bson.D{})
+	listCtx, cancel := context.WithTimeout(c, healthCheckTimeout)
+	defer cancel()
+	_, span := otel.Tracer("health").Start(listCtx, "list-collections")
+	collections, err := database.Db.ListCollectionNames(listCtx, bson.D{})
 	span.End()
 	if err != nil {
 		messages = append(messages, err.Error())
 		errorCount += 1
 	}
 
+	pingCtx, cancel := context.WithTimeout(c, healthCheckTimeout)
+	defer cancel()
 	start := time.Now()
-	_, span = otel.Tracer("health").Start(c, "ping-database")
-	err = database.Db.Client().Ping(c, readpref.Primary())
+	_, span = otel.Tracer("health").Start(pingCtx, "ping-database")
+	err = database.Db.Client().Ping(pingCtx, readpref.Primary())
 	span.End()
 	duration := time.Since(start)
 	if err != nil {
