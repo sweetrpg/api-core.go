@@ -1,3 +1,10 @@
+
+## 0.0.438 - 2026-07-24
+
+### Fixed
+- Bound HealthHandler's Mongo calls with a timeout (#148)
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
