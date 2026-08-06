@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/sweetrpg/api-core.go/server/status.go (8.7%)</option>
+				<option value="file0">github.com/sweetrpg/api-core.go/server/status.go (8.0%)</option>
 				
 				<option value="file1">github.com/sweetrpg/api-core.go/tracing/otel.go (0.0%)</option>
 				
@@ -95,6 +95,7 @@ import (
         "time"
 
         "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
         "github.com/sweetrpg/mongodb.go/database"
         "go.mongodb.org/mongo-driver/bson"
         "go.mongodb.org/mongo-driver/mongo/readpref"
@@ -116,6 +117,7 @@ func HealthHandler(c context.Context) vo.HealthResponseVO <span class="cov0" tit
         collections, err := database.Db.ListCollectionNames(listCtx, bson.D{})
         span.End()
         if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("health check: list-collections failed", "database", database.Db.Name(), "error", err.Error())
                 messages = append(messages, err.Error())
                 errorCount += 1
         }</span>
@@ -128,6 +130,7 @@ func HealthHandler(c context.Context) vo.HealthResponseVO <span class="cov0" tit
         span.End()
         duration := time.Since(start)
         if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("health check: ping-database failed", "database", database.Db.Name(), "duration", duration.String(), "error", err.Error())
                 messages = append(messages, err.Error())
                 errorCount += 1
         }</span>
