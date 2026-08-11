@@ -1,4 +1,15 @@
 
+## 0.1.0 - 2026-08-11
+
+### Added
+- Add fail-open flagd client wrapper
+
+
+### Fixed
+- Log health check failures instead of swallowing them silently
+
+
+
 ## 0.0.438 - 2026-07-24
 
 ### Fixed

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sweetrpg/api-core.go/vo"
+	"github.com/sweetrpg/common.go/logging"
 	"github.com/sweetrpg/mongodb.go/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -28,6 +29,7 @@ func HealthHandler(c context.Context) vo.HealthResponseVO {
 	collections, err := database.Db.ListCollectionNames(listCtx, bson.D{})
 	span.End()
 	if err != nil {
+		logging.Logger.Error("health check: list-collections failed", "database", database.Db.Name(), "error", err.Error())
 		messages = append(messages, err.Error())
 		errorCount += 1
 	}
@@ -40,6 +42,7 @@ func HealthHandler(c context.Context) vo.HealthResponseVO {
 	span.End()
 	duration := time.Since(start)
 	if err != nil {
+		logging.Logger.Error("health check: ping-database failed", "database", database.Db.Name(), "duration", duration.String(), "error", err.Error())
 		messages = append(messages, err.Error())
 		errorCount += 1
 	}
