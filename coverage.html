@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>server: Go Coverage Report</title>
+		<title>featureflags: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,15 +55,17 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/sweetrpg/api-core.go/server/status.go (8.0%)</option>
+				<option value="file0">github.com/sweetrpg/api-core.go/featureflags/client.go (41.7%)</option>
 				
-				<option value="file1">github.com/sweetrpg/api-core.go/tracing/otel.go (0.0%)</option>
+				<option value="file1">github.com/sweetrpg/api-core.go/server/status.go (8.0%)</option>
 				
-				<option value="file2">github.com/sweetrpg/api-core.go/tracing/setup.go (0.0%)</option>
+				<option value="file2">github.com/sweetrpg/api-core.go/tracing/otel.go (0.0%)</option>
 				
-				<option value="file3">github.com/sweetrpg/api-core.go/util/convert.go (100.0%)</option>
+				<option value="file3">github.com/sweetrpg/api-core.go/tracing/setup.go (0.0%)</option>
 				
-				<option value="file4">github.com/sweetrpg/api-core.go/util/options.go (100.0%)</option>
+				<option value="file4">github.com/sweetrpg/api-core.go/util/convert.go (100.0%)</option>
+				
+				<option value="file5">github.com/sweetrpg/api-core.go/util/options.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -86,7 +88,62 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package server
+		<pre class="file" id="file0" style="display: none">// Package featureflags provides a shared client for evaluating feature flags
+// against the flagd sidecar injected into a pod by the OpenFeature Operator.
+package featureflags
+
+import (
+        "context"
+
+        flagd "github.com/open-feature/go-sdk-contrib/providers/flagd/pkg"
+        "github.com/open-feature/go-sdk/openfeature"
+        "github.com/sweetrpg/common.go/logging"
+)
+
+// Client evaluates feature flags. Every method fails open: if the flagd
+// sidecar is unreachable or an evaluation errors, the caller-supplied default
+// is returned rather than blocking or propagating the error - a briefly
+// unavailable sidecar must degrade to "flag off," not "service won't start."
+type Client struct {
+        ofClient *openfeature.Client
+}
+
+// New creates a feature-flag client for serviceName, wired to the flagd
+// sidecar injected into this pod by the OpenFeature Operator. The sidecar
+// runs on localhost, so the provider uses its default RPC-mode configuration
+// (host "localhost", port 8013) rather than a cluster-DNS address.
+//
+// Provider setup is asynchronous (openfeature.SetProvider does not block) so
+// a slow-starting or unreachable sidecar never delays service startup;
+// evaluations made before the provider is ready simply fail open.
+func New(serviceName string) *Client <span class="cov0" title="0">{
+        provider, err := flagd.NewProvider()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Warn("failed to construct flagd provider; feature flags will use caller-supplied defaults", "error", err.Error())
+                return &amp;Client{ofClient: openfeature.NewClient(serviceName)}
+        }</span>
+
+        <span class="cov0" title="0">if err := openfeature.SetProvider(provider); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Warn("failed to set flagd provider; feature flags will use caller-supplied defaults", "error", err.Error())
+        }</span>
+
+        <span class="cov0" title="0">return &amp;Client{ofClient: openfeature.NewClient(serviceName)}</span>
+}
+
+// BoolFlag evaluates a boolean flag, returning defaultValue if flagd is
+// unreachable or the evaluation otherwise errors.
+func (c *Client) BoolFlag(ctx context.Context, key string, defaultValue bool) bool <span class="cov10" title="4">{
+        value, err := c.ofClient.BooleanValue(ctx, key, defaultValue, openfeature.EvaluationContext{})
+        if err != nil </span><span class="cov8" title="3">{
+                logging.Logger.Warn("feature flag evaluation failed; using default", "flag", key, "default", defaultValue, "error", err.Error())
+                return defaultValue
+        }</span>
+
+        <span class="cov1" title="1">return value</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package server
 
 import (
         "context"
@@ -153,7 +210,7 @@ func PingHandler() vo.PingResponseVO <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package tracing
+		<pre class="file" id="file2" style="display: none">package tracing
 
 import (
         "context"
@@ -196,7 +253,7 @@ func BuildSpanWithParams(c context.Context, tracerName string, spanName string, 
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package tracing
+		<pre class="file" id="file3" style="display: none">package tracing
 
 import (
         "context"
@@ -273,7 +330,7 @@ func TeardownTracing() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package util
+		<pre class="file" id="file4" style="display: none">package util
 
 import (
         "github.com/sweetrpg/common.go/logging"
@@ -311,7 +368,7 @@ func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, project
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package util
+		<pre class="file" id="file5" style="display: none">package util
 
 import (
         "math"
