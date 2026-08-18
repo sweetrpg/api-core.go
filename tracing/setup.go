@@ -9,6 +9,7 @@ import (
 	"github.com/sweetrpg/common.go/logging"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
@@ -64,6 +65,13 @@ func SetupTracing(serviceName string) {
 	tp = newTraceProvider(exp, serviceName)
 
 	otel.SetTracerProvider(tp)
+
+	// Without a global propagator, otel.GetTextMapPropagator() defaults to a no-op - both
+	// otelgin.Middleware's inbound header extraction AND otelhttp's outbound header injection
+	// read from this, so without it neither incoming nor outgoing trace context ever actually
+	// propagates, despite the middleware/transport being wired up correctly everywhere else.
+	// W3C TraceContext matches the Swift/Rust frontends' own propagators.
+	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	// Finally, set the tracer that can be used for this package.
 	name := os.Getenv(constants.TRACING_NAME)
