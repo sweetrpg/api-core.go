@@ -35,11 +35,16 @@ func newExporter(ctx context.Context) (sdktrace.SpanExporter, error) {
 }
 
 func newTraceProvider(exp sdktrace.SpanExporter, serviceName string) *sdktrace.TracerProvider {
-	// Ensure default SDK resources and the required service name are set.
+	// Ensure default SDK resources and the required service name are set. Schemaless (not
+	// NewWithAttributes(semconv.SchemaURL, ...)) deliberately: resource.Default()'s own schema
+	// version is whatever the otel/sdk release bundles internally, which doesn't necessarily
+	// match whatever semconv package version is pinned here - a mismatch makes resource.Merge
+	// panic on every startup ("conflicting Schema URL"). An empty schema URL merges with any
+	// other schema without conflict, so this is future-proof against the sdk bumping its own
+	// bundled semconv version out from under this pin.
 	r, err := resource.Merge(
 		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
+		resource.NewSchemaless(
 			semconv.ServiceName(serviceName),
 		),
 	)
