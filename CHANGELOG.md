@@ -1,4 +1,12 @@
 
+## 0.1.1 - 2026-08-18
+
+### Fixed
+- Register global W3C propagator
+- Stop panicking on resource schema URL mismatch
+
+
+
 ## 0.1.0 - 2026-08-11
 
 ### Added
