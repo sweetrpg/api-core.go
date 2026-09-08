@@ -1,4 +1,11 @@
 
+## 0.2.0 - 2026-09-08
+
+### Added
+- Add allow-listed per-field filter operator (eq/contains/in)
+
+
+
 ## 0.1.1 - 2026-08-18
 
 ### Fixed
