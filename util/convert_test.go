@@ -18,7 +18,8 @@ func (suite *ConvertTestSuite) TestConvertNoParams() {
 
 	query := "http://localhost:1234/endpoint"
 
-	params := GetQueryParams(query)
+	params, err := GetQueryParams(query)
+	assert.NoError(suite.T(), err)
 	logging.Logger.Debug("GetQueryParams", "params", params)
 	assert.EqualValues(suite.T(), 0, params.Start)
 	assert.EqualValues(suite.T(), 50, params.Limit)
@@ -35,7 +36,8 @@ func (suite *ConvertTestSuite) TestConvertPagingParams() {
 
 	query := "http://localhost:1234/endpoint?page[start]=1&page[limit]=5"
 
-	params := GetQueryParams(query)
+	params, err := GetQueryParams(query)
+	assert.NoError(suite.T(), err)
 	logging.Logger.Debug("GetQueryParams", "params", params)
 	assert.EqualValues(suite.T(), 1, params.Start)
 	assert.EqualValues(suite.T(), 5, params.Limit)
@@ -52,7 +54,8 @@ func (suite *ConvertTestSuite) TestConvertSortParams() {
 
 	query := "http://localhost:1234/endpoint?sort=bar"
 
-	params := GetQueryParams(query)
+	params, err := GetQueryParams(query)
+	assert.NoError(suite.T(), err)
 	logging.Logger.Debug("GetQueryParams", "params", params)
 	assert.EqualValues(suite.T(), 0, params.Start)
 	assert.EqualValues(suite.T(), 50, params.Limit)
@@ -72,7 +75,8 @@ func (suite *ConvertTestSuite) TestConvertFilterParams() {
 
 	query := "http://localhost:1234/endpoint?filter[baz]=1"
 
-	params := GetQueryParams(query)
+	params, err := GetQueryParams(query)
+	assert.NoError(suite.T(), err)
 	logging.Logger.Debug("GetQueryParams", "params", params)
 	assert.EqualValues(suite.T(), 0, params.Start)
 	assert.EqualValues(suite.T(), 50, params.Limit)
@@ -92,7 +96,8 @@ func (suite *ConvertTestSuite) TestConvertProjectionParams() {
 
 	query := "http://localhost:1234/endpoint?fields=foo,bar,baz"
 
-	params := GetQueryParams(query)
+	params, err := GetQueryParams(query)
+	assert.NoError(suite.T(), err)
 	logging.Logger.Debug("GetQueryParams", "params", params)
 	assert.EqualValues(suite.T(), 0, params.Start)
 	assert.EqualValues(suite.T(), 50, params.Limit)
@@ -114,7 +119,8 @@ func (suite *ConvertTestSuite) TestConvertAllParams() {
 
 	query := "http://localhost:1234/endpoint?page[start]=1&page[limit]=5&fields=foo,bar&sort=bar&filter[baz]=1"
 
-	params := GetQueryParams(query)
+	params, err := GetQueryParams(query)
+	assert.NoError(suite.T(), err)
 	logging.Logger.Debug("GetQueryParams", "params", params)
 	assert.EqualValues(suite.T(), 1, params.Start)
 	assert.EqualValues(suite.T(), 5, params.Limit)
@@ -161,6 +167,38 @@ func (suite *ConvertTestSuite) TestConvertProjectionExclusionMarshalsAsZero() {
 	assert.Equal(suite.T(), 1, len(projection))
 	assert.EqualValues(suite.T(), "secret", projection[0].Key)
 	assert.EqualValues(suite.T(), 0, projection[0].Value)
+}
+
+// Task 1.3: filter[title][contains]=foo converts to a case-insensitive $regex clause.
+func (suite *ConvertTestSuite) TestConvertContainsBuildsCaseInsensitiveRegex() {
+	logging.Init()
+
+	params, err := GetQueryParams("http://localhost:1234/endpoint?filter[title][contains]=foo")
+	assert.NoError(suite.T(), err)
+
+	filter, _, _ := ConvertQueryParams(params)
+
+	assert.Equal(suite.T(), 1, len(filter))
+	assert.EqualValues(suite.T(), "title", filter[0].Key)
+	assert.EqualValues(suite.T(), bson.D{{Key: "$regex", Value: "foo"}, {Key: "$options", Value: "i"}}, filter[0].Value)
+
+	doc, marshalErr := bson.MarshalExtJSON(filter, false, false)
+	assert.NoError(suite.T(), marshalErr)
+	assert.JSONEq(suite.T(), `{"title":{"$regex":"foo","$options":"i"}}`, string(doc))
+}
+
+// Task 1.1 regression at the convert layer: the bare form still yields $eq.
+func (suite *ConvertTestSuite) TestConvertBareFilterStillEq() {
+	logging.Init()
+
+	params, err := GetQueryParams("http://localhost:1234/endpoint?filter[title]=Dune")
+	assert.NoError(suite.T(), err)
+
+	filter, _, _ := ConvertQueryParams(params)
+
+	assert.Equal(suite.T(), 1, len(filter))
+	assert.EqualValues(suite.T(), "title", filter[0].Key)
+	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: []string{"Dune"}}}, filter[0].Value)
 }
 
 func TestConvertTestSuite(t *testing.T) {
