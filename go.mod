@@ -1,6 +1,6 @@
 module github.com/sweetrpg/api-core.go
 
-go 1.25.0
+go 1.26.5
 
 require (
 	github.com/open-feature/go-sdk v1.17.2
