@@ -69,7 +69,7 @@
 				
 				<option value="file6">github.com/sweetrpg/api-core.go/util/env.go (20.0%)</option>
 				
-				<option value="file7">github.com/sweetrpg/api-core.go/util/options.go (93.6%)</option>
+				<option value="file7">github.com/sweetrpg/api-core.go/util/options.go (94.1%)</option>
 				
 				<option value="file8">github.com/sweetrpg/api-core.go/util/redis.go (50.0%)</option>
 				
@@ -675,16 +675,16 @@ const maxFilterValueLen = 128
 // $or/... in operator position) or an empty segment (a leading/trailing/doubled dot). Interior
 // dots are allowed - they are legitimate nested-field notation (e.g. "tags.value"). A leading
 // "-" is allowed: it is the descending-sort marker, stripped downstream.
-func validFieldName(name string) bool <span class="cov8" title="17">{
+func validFieldName(name string) bool <span class="cov9" title="25">{
         if name == "" </span><span class="cov0" title="0">{
                 return false
         }</span>
-        <span class="cov8" title="17">for _, seg := range strings.Split(strings.TrimPrefix(name, "-"), ".") </span><span class="cov9" title="19">{
-                if seg == "" || strings.HasPrefix(seg, "$") </span><span class="cov4" title="3">{
+        <span class="cov9" title="25">for _, seg := range strings.Split(strings.TrimPrefix(name, "-"), ".") </span><span class="cov9" title="27">{
+                if seg == "" || strings.HasPrefix(seg, "$") </span><span class="cov4" title="4">{
                         return false
                 }</span>
         }
-        <span class="cov8" title="14">return true</span>
+        <span class="cov9" title="21">return true</span>
 }
 
 // parseFilterKey splits a raw filter key from the querystring parser into its field name and, if
@@ -694,23 +694,23 @@ func validFieldName(name string) bool <span class="cov8" title="17">{
 // error, surfaced by callers as a 400 rather than falling back to $eq. More than one operator
 // segment is malformed. A field name that isn't a plain document path (a "$"-prefixed or empty
 // segment) is rejected regardless of operator.
-func parseFilterKey(key string) (field string, operation *string, err error) <span class="cov8" title="13">{
+func parseFilterKey(key string) (field string, operation *string, err error) <span class="cov8" title="15">{
         parts := strings.Split(key, "][")
         switch len(parts) </span>{
-        case 1:<span class="cov4" title="4">
+        case 1:<span class="cov5" title="5">
                 if !validFieldName(parts[0]) </span><span class="cov0" title="0">{
                         return "", nil, fmt.Errorf("invalid filter field %q", parts[0])
                 }</span>
-                <span class="cov4" title="4">return parts[0], nil, nil</span>
-        case 2:<span class="cov7" title="9">
+                <span class="cov5" title="5">return parts[0], nil, nil</span>
+        case 2:<span class="cov7" title="10">
                 if !validFieldName(parts[0]) </span><span class="cov2" title="2">{
                         return "", nil, fmt.Errorf("invalid filter field %q", parts[0])
                 }</span>
-                <span class="cov6" title="7">mongoOp, ok := filterOperators[parts[1]]
+                <span class="cov6" title="8">mongoOp, ok := filterOperators[parts[1]]
                 if !ok </span><span class="cov1" title="1">{
                         return "", nil, fmt.Errorf("unsupported filter operator %q on field %q", parts[1], parts[0])
                 }</span>
-                <span class="cov5" title="6">return parts[0], &amp;mongoOp, nil</span>
+                <span class="cov6" title="7">return parts[0], &amp;mongoOp, nil</span>
         default:<span class="cov0" title="0">
                 return "", nil, fmt.Errorf("malformed filter key %q", key)</span>
         }
@@ -719,7 +719,7 @@ func parseFilterKey(key string) (field string, operation *string, err error) <sp
 // GetQueryParams parses a raw querystring into paging/sort/filter/projection parameters. It
 // returns an error for a filter that names an operator outside filterOperators, so a list
 // handler can answer 400 instead of silently ignoring or mishandling the filter.
-func GetQueryParams(query string) (QueryParams, error) <span class="cov10" title="27">{
+func GetQueryParams(query string) (QueryParams, error) <span class="cov10" title="30">{
         logging.Logger.Debug("parsing query string", "query", query)
 
         opt, _ := options.FromQuerystring(query)
@@ -731,37 +731,45 @@ func GetQueryParams(query string) (QueryParams, error) <span class="cov10" title
                 if !validFieldName(v) </span><span class="cov1" title="1">{
                         return QueryParams{}, fmt.Errorf("invalid sort field %q", v)
                 }</span>
-                <span class="cov4" title="3">sortFields = append(sortFields, Sort{v, 1} /*bson.E{v, 1}*/)</span>
+                <span class="cov3" title="3">sortFields = append(sortFields, Sort{v, 1} /*bson.E{v, 1}*/)</span>
         }
 
-        <span class="cov9" title="26">var filters []Filter // bson.D
-        for k, v := range opt.Filter </span><span class="cov8" title="13">{
+        <span class="cov9" title="29">var filters []Filter // bson.D
+        for k, v := range opt.Filter </span><span class="cov8" title="15">{
                 logging.Logger.Debug("filter", "k", k, "v", v)
                 field, operation, err := parseFilterKey(k)
-                if err != nil </span><span class="cov4" title="3">{
+                if err != nil </span><span class="cov3" title="3">{
                         return QueryParams{}, err
                 }</span>
-                <span class="cov7" title="10">for _, val := range v </span><span class="cov7" title="10">{
+                <span class="cov7" title="12">for _, val := range v </span><span class="cov7" title="12">{
                         if len(val) &gt; maxFilterValueLen </span><span class="cov1" title="1">{
                                 return QueryParams{}, fmt.Errorf(
                                         "filter value on field %q exceeds %d characters", field, maxFilterValueLen)
                         }</span>
+                        // An empty contains value builds {$regex: ""}, which matches every document - a free
+                        // full-collection scan trigger. Reject it; a caller wanting "no filter" omits the key.
+                        <span class="cov7" title="11">if val == "" &amp;&amp; operation != nil &amp;&amp; *operation == "$regex" </span><span class="cov1" title="1">{
+                                return QueryParams{}, fmt.Errorf("empty contains value on field %q", field)
+                        }</span>
                 }
-                <span class="cov7" title="9">filters = append(filters, Filter{Field: field, Operation: operation, Value: v})</span>
+                <span class="cov7" title="10">filters = append(filters, Filter{Field: field, Operation: operation, Value: v})</span>
         }
 
-        <span class="cov9" title="22">var proj []Projection // bson.D
-        for _, v := range opt.Fields </span><span class="cov5" title="5">{
+        <span class="cov9" title="24">var proj []Projection // bson.D
+        for _, v := range opt.Fields </span><span class="cov5" title="6">{
                 logging.Logger.Debug("projection", "v", v)
-                proj = append(proj, Projection{v, true} /*bson.E{v, 1}*/)
-        }</span>
+                if !validFieldName(v) </span><span class="cov1" title="1">{
+                        return QueryParams{}, fmt.Errorf("invalid projection field %q", v)
+                }</span>
+                <span class="cov5" title="5">proj = append(proj, Projection{v, true} /*bson.E{v, 1}*/)</span>
+        }
 
-        <span class="cov9" title="22">limit := opt.Page[constants.PageLimitOption]
-        if limit == 0 </span><span class="cov8" title="15">{
+        <span class="cov9" title="23">limit := opt.Page[constants.PageLimitOption]
+        if limit == 0 </span><span class="cov8" title="16">{
                 limit = dbconstants.QueryDefaultSize
         }</span>
 
-        <span class="cov9" title="22">params := QueryParams{
+        <span class="cov9" title="23">params := QueryParams{
                 Start:      int64(math.Max(0, float64(opt.Page[constants.PageStartOption]))),
                 Limit:      int(math.Max(1, math.Min(float64(dbconstants.QueryMaxSize), float64(limit)))),
                 Sort:       sortFields,
