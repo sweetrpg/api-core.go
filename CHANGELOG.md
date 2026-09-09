@@ -1,4 +1,11 @@
 
+## 0.3.0 - 2026-09-09
+
+### Added
+- Add shared Redis-backed per-client/IP rate limiter
+
+
+
 ## 0.2.1 - 2026-09-09
 
 ### Fixed
