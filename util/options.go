@@ -126,6 +126,11 @@ func GetQueryParams(query string) (QueryParams, error) {
 				return QueryParams{}, fmt.Errorf(
 					"filter value on field %q exceeds %d characters", field, maxFilterValueLen)
 			}
+			// An empty contains value builds {$regex: ""}, which matches every document - a free
+			// full-collection scan trigger. Reject it; a caller wanting "no filter" omits the key.
+			if val == "" && operation != nil && *operation == "$regex" {
+				return QueryParams{}, fmt.Errorf("empty contains value on field %q", field)
+			}
 		}
 		filters = append(filters, Filter{Field: field, Operation: operation, Value: v})
 	}
@@ -133,6 +138,9 @@ func GetQueryParams(query string) (QueryParams, error) {
 	var proj []Projection // bson.D
 	for _, v := range opt.Fields {
 		logging.Logger.Debug("projection", "v", v)
+		if !validFieldName(v) {
+			return QueryParams{}, fmt.Errorf("invalid projection field %q", v)
+		}
 		proj = append(proj, Projection{v, true} /*bson.E{v, 1}*/)
 	}
 
