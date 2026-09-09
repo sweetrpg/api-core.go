@@ -1,4 +1,11 @@
 
+## 0.3.1 - 2026-09-09
+
+### Fixed
+- Guard projection fields and reject empty contains values
+
+
+
 ## 0.3.0 - 2026-09-09
 
 ### Added
