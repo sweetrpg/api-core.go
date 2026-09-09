@@ -1,6 +1,7 @@
 package util
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -145,6 +146,50 @@ func (suite *OptionsTestSuite) TestContainsOperatorMapsToRegex() {
 		assert.Equal(suite.T(), "title", params.Filter[0].Field)
 		assert.Equal(suite.T(), "$regex", *params.Filter[0].Operation)
 	}
+}
+
+// A "$"-prefixed filter field is rejected, so a client can't reach $expr/$where/$or in
+// operator position even though the operator segment itself is allow-listed.
+func (suite *OptionsTestSuite) TestDollarPrefixedFilterFieldErrors() {
+	logging.Init()
+
+	_, err := GetQueryParams("http://localhost:1234/endpoint?filter[$expr][eq]=x")
+	assert.Error(suite.T(), err)
+}
+
+// An empty path segment (leading/trailing/doubled dot) is rejected; a legitimate nested path
+// like tags.value is not.
+func (suite *OptionsTestSuite) TestFilterFieldSegmentValidation() {
+	logging.Init()
+
+	_, err := GetQueryParams("http://localhost:1234/endpoint?filter[tags.][eq]=x")
+	assert.Error(suite.T(), err)
+
+	params, err := GetQueryParams("http://localhost:1234/endpoint?filter[tags.value][in]=core")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), "tags.value", params.Filter[0].Field)
+}
+
+// A "$"-prefixed sort field is rejected.
+func (suite *OptionsTestSuite) TestDollarPrefixedSortFieldErrors() {
+	logging.Init()
+
+	_, err := GetQueryParams("http://localhost:1234/endpoint?sort=$where")
+	assert.Error(suite.T(), err)
+
+	// the descending-sort "-" prefix is still fine
+	params, err := GetQueryParams("http://localhost:1234/endpoint?sort=-name")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), "-name", params.Sort[0].Field)
+}
+
+// A filter value past the length cap is a 400, not a query.
+func (suite *OptionsTestSuite) TestOverlongFilterValueErrors() {
+	logging.Init()
+
+	long := strings.Repeat("a", maxFilterValueLen+1)
+	_, err := GetQueryParams("http://localhost:1234/endpoint?filter[title][contains]=" + long)
+	assert.Error(suite.T(), err)
 }
 
 func TestOptionsTestSuite(t *testing.T) {
