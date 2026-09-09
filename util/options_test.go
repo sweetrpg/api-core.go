@@ -192,6 +192,26 @@ func (suite *OptionsTestSuite) TestOverlongFilterValueErrors() {
 	assert.Error(suite.T(), err)
 }
 
+// An empty contains value would build {$regex: ""} (matches everything) - reject it.
+func (suite *OptionsTestSuite) TestEmptyContainsValueErrors() {
+	logging.Init()
+
+	_, err := GetQueryParams("http://localhost:1234/endpoint?filter[title][contains]=")
+	assert.Error(suite.T(), err)
+
+	// a bare (eq) empty value is still fine - that's a real "field == ''" query
+	_, err = GetQueryParams("http://localhost:1234/endpoint?filter[title]=")
+	assert.NoError(suite.T(), err)
+}
+
+// A "$"-prefixed projection field is rejected too.
+func (suite *OptionsTestSuite) TestDollarPrefixedProjectionFieldErrors() {
+	logging.Init()
+
+	_, err := GetQueryParams("http://localhost:1234/endpoint?fields=$where")
+	assert.Error(suite.T(), err)
+}
+
 func TestOptionsTestSuite(t *testing.T) {
 	suite.Run(t, new(OptionsTestSuite))
 }
