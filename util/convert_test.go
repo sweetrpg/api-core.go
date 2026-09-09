@@ -1,6 +1,7 @@
 package util
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -199,6 +200,23 @@ func (suite *ConvertTestSuite) TestConvertBareFilterStillEq() {
 	assert.Equal(suite.T(), 1, len(filter))
 	assert.EqualValues(suite.T(), "title", filter[0].Key)
 	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: []string{"Dune"}}}, filter[0].Value)
+}
+
+// A contains value with regex metacharacters is escaped, so it matches literally and cannot
+// drive catastrophic backtracking on the database.
+func (suite *ConvertTestSuite) TestConvertContainsEscapesRegexMetacharacters() {
+	logging.Init()
+
+	params, err := GetQueryParams("http://localhost:1234/endpoint?filter[title][contains]=" +
+		url.QueryEscape("(a+)+$"))
+	assert.NoError(suite.T(), err)
+
+	filter, _, _ := ConvertQueryParams(params)
+
+	assert.Equal(suite.T(), 1, len(filter))
+	assert.EqualValues(suite.T(),
+		bson.D{{Key: "$regex", Value: `\(a\+\)\+\$`}, {Key: "$options", Value: "i"}},
+		filter[0].Value)
 }
 
 func TestConvertTestSuite(t *testing.T) {

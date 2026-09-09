@@ -1,6 +1,7 @@
 package util
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/sweetrpg/common.go/logging"
@@ -48,10 +49,14 @@ func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, project
 
 // regexPattern reduces a filter's value list to a single $regex pattern string. A contains
 // filter normally carries exactly one value; multiple values (filter[f][contains]=a,b) become a
-// regex alternation so the match still means "any of".
+// regex alternation so the match still means "any of". Each value is regexp.QuoteMeta-escaped:
+// "contains" is a literal case-insensitive substring match (design intent), the client is not
+// meant to supply regex syntax, and an unescaped client pattern is a server-side ReDoS vector
+// against the shared database.
 func regexPattern(values []string) string {
-	if len(values) == 1 {
-		return values[0]
+	quoted := make([]string, len(values))
+	for i, v := range values {
+		quoted[i] = regexp.QuoteMeta(v)
 	}
-	return strings.Join(values, "|")
+	return strings.Join(quoted, "|")
 }

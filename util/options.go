@@ -45,18 +45,47 @@ var filterOperators = map[string]string{
 	"in":       "$in",
 }
 
+// maxFilterValueLen bounds a single filter value's length. A contains filter builds a $regex
+// scanned per document on the shared database; an overlong value is rejected (400) rather than
+// handed to the query planner. 128 is generous for any real name/title search.
+const maxFilterValueLen = 128
+
+// validFieldName rejects a field (or sort key) that could reach a Mongo query as something
+// other than a plain document path: a segment beginning with "$" (which would put $expr/$where/
+// $or/... in operator position) or an empty segment (a leading/trailing/doubled dot). Interior
+// dots are allowed - they are legitimate nested-field notation (e.g. "tags.value"). A leading
+// "-" is allowed: it is the descending-sort marker, stripped downstream.
+func validFieldName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, seg := range strings.Split(strings.TrimPrefix(name, "-"), ".") {
+		if seg == "" || strings.HasPrefix(seg, "$") {
+			return false
+		}
+	}
+	return true
+}
+
 // parseFilterKey splits a raw filter key from the querystring parser into its field name and, if
 // present, its Mongo operator. The bare form "field" (from filter[field]=value) returns a nil
 // operator, preserving the historical default-to-$eq behavior. The operator form "field][seg"
 // (from filter[field][seg]=value) maps seg through filterOperators; an unrecognized seg is an
 // error, surfaced by callers as a 400 rather than falling back to $eq. More than one operator
-// segment is malformed.
+// segment is malformed. A field name that isn't a plain document path (a "$"-prefixed or empty
+// segment) is rejected regardless of operator.
 func parseFilterKey(key string) (field string, operation *string, err error) {
 	parts := strings.Split(key, "][")
 	switch len(parts) {
 	case 1:
+		if !validFieldName(parts[0]) {
+			return "", nil, fmt.Errorf("invalid filter field %q", parts[0])
+		}
 		return parts[0], nil, nil
 	case 2:
+		if !validFieldName(parts[0]) {
+			return "", nil, fmt.Errorf("invalid filter field %q", parts[0])
+		}
 		mongoOp, ok := filterOperators[parts[1]]
 		if !ok {
 			return "", nil, fmt.Errorf("unsupported filter operator %q on field %q", parts[1], parts[0])
@@ -79,6 +108,9 @@ func GetQueryParams(query string) (QueryParams, error) {
 	var sortFields []Sort // bson.D
 	for _, v := range opt.Sort {
 		logging.Logger.Debug("sort field", "v", v)
+		if !validFieldName(v) {
+			return QueryParams{}, fmt.Errorf("invalid sort field %q", v)
+		}
 		sortFields = append(sortFields, Sort{v, 1} /*bson.E{v, 1}*/)
 	}
 
@@ -88,6 +120,12 @@ func GetQueryParams(query string) (QueryParams, error) {
 		field, operation, err := parseFilterKey(k)
 		if err != nil {
 			return QueryParams{}, err
+		}
+		for _, val := range v {
+			if len(val) > maxFilterValueLen {
+				return QueryParams{}, fmt.Errorf(
+					"filter value on field %q exceeds %d characters", field, maxFilterValueLen)
+			}
 		}
 		filters = append(filters, Filter{Field: field, Operation: operation, Value: v})
 	}

@@ -1,4 +1,11 @@
 
+## 0.2.1 - 2026-09-09
+
+### Fixed
+- Escape contains-filter values and reject unsafe field names
+
+
+
 ## 0.2.0 - 2026-09-08
 
 ### Added
