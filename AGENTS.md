@@ -8,7 +8,10 @@ working in this repository.
 `api-core.go` provides shared HTTP API building blocks for sweetrpg's Go services: query-string
 parsing into paging/sort/filter/projection params (`util`), conversion of those params into
 MongoDB BSON filters (`util.ConvertQueryParams`), OpenTelemetry tracing setup (`tracing`),
-health/ping handlers (`server`), and common response value objects (`vo`).
+health/ping handlers (`server`), the Redis-backed per-client rate limiter (`ratelimit`, PADR-0036:
+`/status/*` fails open on a store fault, other routes fail closed, every 429 has `Retry-After`,
+store errors are counted in `ratelimit_backend_errors_total{tier}`), and common response value
+objects (`vo`).
 
 ## Dependencies
 

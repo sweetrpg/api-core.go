@@ -28,13 +28,13 @@ const (
 	ZIPKIN_ENDPOINT = "ZIPKIN_ENDPOINT"
 )
 
-// Rate-limit tier defaults, applied when the matching env var is unset. These match
-// catalog-api's validated values: a looser "cheap" tier for shallow /status routes and a
-// stricter "standard" tier for data routes.
+// Rate-limit tier defaults, applied when the matching env var is unset (PADR-0036): a looser
+// "cheap" tier for shallow /status routes and a "standard" tier for everything else. Services with
+// a small expected audience, such as internal admin routes, should set lower values explicitly.
 const (
-	RateLimitCheapDefault          = 120
+	RateLimitCheapDefault          = 1200
 	RateLimitCheapWindowDefault    = 60
-	RateLimitStandardDefault       = 30
+	RateLimitStandardDefault       = 300
 	RateLimitStandardWindowDefault = 60
 )
 
@@ -47,6 +47,6 @@ const (
 	ErrorRateLimited  = "rate_limited"
 
 	// ErrorRateLimitUnavailable is the error code returned with a 503 when the rate-limit
-	// backend is unreachable (fail closed).
+	// backend is unreachable on a standard-tier route (fail closed). /status/* routes fail open.
 	ErrorRateLimitUnavailable = "rate_limit_unavailable"
 )
