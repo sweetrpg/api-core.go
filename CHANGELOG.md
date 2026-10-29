@@ -1,4 +1,11 @@
 
+## 0.4.0 - 2026-10-29
+
+### Added
+- Fail open on status routes, raise defaults, add Retry-After
+
+
+
 ## 0.3.1 - 2026-09-09
 
 ### Fixed
