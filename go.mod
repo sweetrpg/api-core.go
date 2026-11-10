@@ -1,6 +1,6 @@
 module github.com/sweetrpg/api-core.go
 
-go 1.26.5
+go 1.26.10
 
 require (
 	github.com/alicebob/miniredis/v2 v2.39.0
