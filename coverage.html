@@ -1,0 +1,940 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>featureflags: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/sweetrpg/api-core.go/featureflags/client.go (41.7%)</option>
+				
+				<option value="file1">github.com/sweetrpg/api-core.go/ratelimit/ratelimit.go (93.2%)</option>
+				
+				<option value="file2">github.com/sweetrpg/api-core.go/server/status.go (8.0%)</option>
+				
+				<option value="file3">github.com/sweetrpg/api-core.go/tracing/otel.go (0.0%)</option>
+				
+				<option value="file4">github.com/sweetrpg/api-core.go/tracing/setup.go (0.0%)</option>
+				
+				<option value="file5">github.com/sweetrpg/api-core.go/util/convert.go (100.0%)</option>
+				
+				<option value="file6">github.com/sweetrpg/api-core.go/util/env.go (20.0%)</option>
+				
+				<option value="file7">github.com/sweetrpg/api-core.go/util/options.go (94.1%)</option>
+				
+				<option value="file8">github.com/sweetrpg/api-core.go/util/redis.go (50.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">// Package featureflags provides a shared client for evaluating feature flags
+// against the flagd sidecar injected into a pod by the OpenFeature Operator.
+package featureflags
+
+import (
+        "context"
+
+        flagd "github.com/open-feature/go-sdk-contrib/providers/flagd/pkg"
+        "github.com/open-feature/go-sdk/openfeature"
+        "github.com/sweetrpg/common.go/logging"
+)
+
+// Client evaluates feature flags. Every method fails open: if the flagd
+// sidecar is unreachable or an evaluation errors, the caller-supplied default
+// is returned rather than blocking or propagating the error - a briefly
+// unavailable sidecar must degrade to "flag off," not "service won't start."
+type Client struct {
+        ofClient *openfeature.Client
+}
+
+// New creates a feature-flag client for serviceName, wired to the flagd
+// sidecar injected into this pod by the OpenFeature Operator. The sidecar
+// runs on localhost, so the provider uses its default RPC-mode configuration
+// (host "localhost", port 8013) rather than a cluster-DNS address.
+//
+// Provider setup is asynchronous (openfeature.SetProvider does not block) so
+// a slow-starting or unreachable sidecar never delays service startup;
+// evaluations made before the provider is ready simply fail open.
+func New(serviceName string) *Client <span class="cov0" title="0">{
+        provider, err := flagd.NewProvider()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Warn("failed to construct flagd provider; feature flags will use caller-supplied defaults", "error", err.Error())
+                return &amp;Client{ofClient: openfeature.NewClient(serviceName)}
+        }</span>
+
+        <span class="cov0" title="0">if err := openfeature.SetProvider(provider); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Warn("failed to set flagd provider; feature flags will use caller-supplied defaults", "error", err.Error())
+        }</span>
+
+        <span class="cov0" title="0">return &amp;Client{ofClient: openfeature.NewClient(serviceName)}</span>
+}
+
+// BoolFlag evaluates a boolean flag, returning defaultValue if flagd is
+// unreachable or the evaluation otherwise errors.
+func (c *Client) BoolFlag(ctx context.Context, key string, defaultValue bool) bool <span class="cov10" title="4">{
+        value, err := c.ofClient.BooleanValue(ctx, key, defaultValue, openfeature.EvaluationContext{})
+        if err != nil </span><span class="cov8" title="3">{
+                logging.Logger.Warn("feature flag evaluation failed; using default", "flag", key, "default", defaultValue, "error", err.Error())
+                return defaultValue
+        }</span>
+
+        <span class="cov1" title="1">return value</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">// Package ratelimit implements the platform-wide, Redis-backed, per-client, per-route-tier
+// request rate limiter for sweetrpg Go HTTP services. Counters live in Redis (INCR + EXPIRE)
+// rather than per-pod memory, so a client's limit is consistent across a service's replicas
+// instead of being N times looser depending on how many pods are up.
+//
+// If the counter store is unreachable, standard-tier routes fail closed (503) rather than being
+// served as if unlimited, while /status/* routes fail open so a cache fault cannot fail the
+// liveness and readiness probes that call them (PADR-0036). Every store error is logged at ERROR
+// and counted in ratelimit_backend_errors_total{tier}. Every 429 carries a Retry-After header.
+package ratelimit
+
+import (
+        "context"
+        "errors"
+        "fmt"
+        "math"
+        "net/http"
+        "strconv"
+        "strings"
+        "time"
+
+        "github.com/gin-gonic/gin"
+        "github.com/gomodule/redigo/redis"
+        "github.com/prometheus/client_golang/prometheus"
+        "github.com/prometheus/client_golang/prometheus/promauto"
+
+        "github.com/sweetrpg/api-core.go/constants"
+        "github.com/sweetrpg/api-core.go/util"
+        "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
+)
+
+// Tier names. Routes under /status/ use the looser cheap tier; everything else uses standard.
+const (
+        TierCheap    = "cheap"
+        TierStandard = "standard"
+)
+
+// backendErrors counts failures to reach or use the counter store, by tier, whether the request
+// was then let through (cheap) or rejected (standard). Alert on it: a failing store no longer
+// shows up as failing probes.
+var backendErrors = promauto.NewCounterVec(prometheus.CounterOpts{
+        Name: "ratelimit_backend_errors_total",
+        Help: "Rate-limit counter store errors, by tier.",
+}, []string{"tier"})
+
+func init() <span class="cov1" title="1">{
+        // Export both series at zero so an alert can tell "no errors" from "no data".
+        backendErrors.WithLabelValues(TierCheap)
+        backendErrors.WithLabelValues(TierStandard)
+}</span>
+
+var errNoPool = errors.New("ratelimit: no redis pool configured")
+
+// Tier describes a rate-limit budget: at most Limit requests per Window seconds.
+type Tier struct {
+        Limit  int
+        Window int
+}
+
+// Limiter enforces per-client request limits per tier, backed by a Redis connection pool.
+type Limiter struct {
+        pool  *redis.Pool
+        tiers map[string]Tier
+}
+
+// New builds a Limiter using the given Redis pool and tier definitions. Callers should pass at
+// least a "standard" and "cheap" tier; Allow falls back to "standard" for an unknown tier name.
+func New(pool *redis.Pool, tiers map[string]Tier) *Limiter <span class="cov8" title="19">{
+        return &amp;Limiter{pool: pool, tiers: tiers}
+}</span>
+
+// Result is the outcome of one limit check. RetryAfter is how long until the client's window
+// resets; it is only meaningful when Allowed is false, and is at least one second.
+type Result struct {
+        Allowed    bool
+        RetryAfter time.Duration
+}
+
+// Allow increments the request counter for clientKey within the named tier and reports whether
+// the request is within that tier's limit. A non-nil error means the Redis backend was
+// unreachable; Middleware decides per tier whether that fails open or closed.
+func (l *Limiter) Allow(ctx context.Context, clientKey, tierName string) (bool, error) <span class="cov7" title="15">{
+        res, err := l.Check(ctx, clientKey, tierName)
+        return res.Allowed, err
+}</span>
+
+// Check is Allow plus, for a rejected request, how long the client should wait.
+func (l *Limiter) Check(ctx context.Context, clientKey, tierName string) (Result, error) <span class="cov10" title="35">{
+        tier, ok := l.tiers[tierName]
+        if !ok </span><span class="cov2" title="2">{
+                tier = l.tiers[TierStandard]
+        }</span>
+
+        <span class="cov10" title="35">conn, err := l.pool.GetContext(ctx)
+        if err != nil </span><span class="cov4" title="4">{
+                return Result{}, fmt.Errorf("ratelimit: get redis connection: %w", err)
+        }</span>
+        <span class="cov9" title="31">defer func() </span><span class="cov9" title="31">{ _ = conn.Close() }</span>()
+
+        <span class="cov9" title="31">key := fmt.Sprintf("ratelimit:%s:%s", tierName, clientKey)
+        count, err := redis.Int(conn.Do("INCR", key))
+        if err != nil </span><span class="cov0" title="0">{
+                return Result{}, fmt.Errorf("ratelimit: incr: %w", err)
+        }</span>
+        <span class="cov9" title="31">if count == 1 </span><span class="cov7" title="14">{
+                if _, err := conn.Do("EXPIRE", key, tier.Window); err != nil </span><span class="cov0" title="0">{
+                        return Result{}, fmt.Errorf("ratelimit: expire: %w", err)
+                }</span>
+        }
+        <span class="cov9" title="31">if count &lt;= tier.Limit </span><span class="cov8" title="19">{
+                return Result{Allowed: true}, nil
+        }</span>
+
+        <span class="cov7" title="12">retry, err := retryAfter(conn, key, tier.Window)
+        if err != nil </span><span class="cov0" title="0">{
+                return Result{}, err
+        }</span>
+        <span class="cov7" title="12">return Result{RetryAfter: retry}, nil</span>
+}
+
+// retryAfter is the time left on the counter's window, rounded up to whole seconds and never
+// under one. A counter with no expiry (the process died between INCR and EXPIRE) would block the
+// client forever, so it is given a fresh window and reports the full window.
+func retryAfter(conn redis.Conn, key string, window int) (time.Duration, error) <span class="cov7" title="12">{
+        ms, err := redis.Int64(conn.Do("PTTL", key))
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("ratelimit: pttl: %w", err)
+        }</span>
+        <span class="cov7" title="12">if ms &lt; 0 </span><span class="cov1" title="1">{
+                if _, err := conn.Do("EXPIRE", key, window); err != nil </span><span class="cov0" title="0">{
+                        return 0, fmt.Errorf("ratelimit: expire: %w", err)
+                }</span>
+                <span class="cov1" title="1">return time.Duration(window) * time.Second, nil</span>
+        }
+        <span class="cov7" title="11">secs := int64(math.Ceil(float64(ms) / 1000))
+        return time.Duration(max(secs, 1)) * time.Second, nil</span>
+}
+
+// Ping verifies the Redis backend is reachable, for use in startup/readiness checks.
+func Ping(ctx context.Context, pool *redis.Pool) error <span class="cov2" title="2">{
+        conn, err := pool.GetContext(ctx)
+        if err != nil </span><span class="cov1" title="1">{
+                return err
+        }</span>
+        <span class="cov1" title="1">defer func() </span><span class="cov1" title="1">{ _ = conn.Close() }</span>()
+
+        <span class="cov1" title="1">_, err = conn.Do("PING")
+        return err</span>
+}
+
+// TierFor groups routes into the cheap tier (shallow /status endpoints) and the standard tier
+// (everything else), keyed by route cost rather than one entry per resource.
+func TierFor(path string) string <span class="cov9" title="26">{
+        if strings.HasPrefix(path, "/status/") </span><span class="cov6" title="8">{
+                return TierCheap
+        }</span>
+        <span class="cov8" title="18">return TierStandard</span>
+}
+
+// ClientKey identifies the caller for per-client limiting: the API key if the client sent an
+// X-API-Key header, otherwise the client IP. It does not introduce an auth mechanism - it keys
+// off whatever identity already exists on the request. The key:/ip: prefixes keep a client
+// that sends an API key and one that does not from colliding on the same source address.
+func ClientKey(c *gin.Context) string <span class="cov8" title="20">{
+        if apiKey := c.GetHeader("X-API-Key"); apiKey != "" </span><span class="cov1" title="1">{
+                return "key:" + apiKey
+        }</span>
+        <span class="cov8" title="19">return "ip:" + c.ClientIP()</span>
+}
+
+// Options configures the middleware's tier budgets.
+type Options struct {
+        Cheap    Tier
+        Standard Tier
+}
+
+// DefaultOptions reads the tier budgets from the standard env vars
+// (RATE_LIMIT_CHEAP / RATE_LIMIT_CHEAP_WINDOW_SECONDS / RATE_LIMIT_STANDARD /
+// RATE_LIMIT_STANDARD_WINDOW_SECONDS), falling back to the catalog-api-validated defaults.
+func DefaultOptions() Options <span class="cov4" title="4">{
+        return Options{
+                Cheap: Tier{
+                        Limit:  util.GetEnvInt(constants.RATE_LIMIT_CHEAP, constants.RateLimitCheapDefault),
+                        Window: util.GetEnvInt(constants.RATE_LIMIT_CHEAP_WINDOW, constants.RateLimitCheapWindowDefault),
+                },
+                Standard: Tier{
+                        Limit:  util.GetEnvInt(constants.RATE_LIMIT_STANDARD, constants.RateLimitStandardDefault),
+                        Window: util.GetEnvInt(constants.RATE_LIMIT_STANDARD_WINDOW, constants.RateLimitStandardWindowDefault),
+                },
+        }
+}</span>
+
+// Middleware returns a gin handler that enforces per-client, per-tier limits backed by the
+// given Redis pool. It aborts with 429 (ErrorRateLimited, plus Retry-After) when a client is over
+// its tier limit. When the pool is nil or the store errors it logs, counts, and then either lets
+// the request through (/status/*, so probes survive a cache fault) or aborts with 503
+// (ErrorRateLimitUnavailable) for every other route.
+func Middleware(pool *redis.Pool, opts Options) gin.HandlerFunc <span class="cov7" title="12">{
+        limiter := New(pool, map[string]Tier{
+                TierCheap:    opts.Cheap,
+                TierStandard: opts.Standard,
+        })
+
+        return func(c *gin.Context) </span><span class="cov8" title="21">{
+                tier := TierFor(c.Request.URL.Path)
+                if pool == nil </span><span class="cov3" title="3">{
+                        storeUnavailable(c, tier, errNoPool)
+                        return
+                }</span>
+
+                <span class="cov8" title="18">clientKey := ClientKey(c)
+                res, err := limiter.Check(c.Request.Context(), clientKey, tier)
+                if err != nil </span><span class="cov3" title="3">{
+                        storeUnavailable(c, tier, err)
+                        return
+                }</span>
+                <span class="cov7" title="15">if !res.Allowed </span><span class="cov5" title="7">{
+                        logging.Logger.Warn("Rate limit exceeded", "client", clientKey, "tier", tier, "path", c.Request.URL.Path)
+                        c.Header("Retry-After", strconv.Itoa(int(res.RetryAfter/time.Second)))
+                        c.AbortWithStatusJSON(http.StatusTooManyRequests, vo.ErrorVO{
+                                Error:   constants.ErrorRateLimited,
+                                Message: "Limit exceeded",
+                        })
+                        return
+                }</span>
+                <span class="cov6" title="8">c.Next()</span>
+        }
+}
+
+// storeUnavailable handles one counter-store failure: it is logged once at ERROR and counted,
+// then /status/* (the cheap tier) continues and every other route is rejected.
+func storeUnavailable(c *gin.Context, tier string, err error) <span class="cov5" title="6">{
+        backendErrors.WithLabelValues(tier).Inc()
+        if tier == TierCheap </span><span class="cov2" title="2">{
+                logging.Logger.Error("Rate-limit store unavailable; allowing request (fail open)", "tier", tier, "path", c.Request.URL.Path, "error", err.Error())
+                c.Next()
+                return
+        }</span>
+        <span class="cov4" title="4">logging.Logger.Error("Rate-limit store unavailable; rejecting request (fail closed)", "tier", tier, "path", c.Request.URL.Path, "error", err.Error())
+        c.AbortWithStatusJSON(http.StatusServiceUnavailable, vo.ErrorVO{
+                Error:   constants.ErrorRateLimitUnavailable,
+                Message: "Rate limiting is temporarily unavailable",
+        })</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package server
+
+import (
+        "context"
+        "fmt"
+        "os"
+        "time"
+
+        "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/mongo/readpref"
+        "go.opentelemetry.io/otel"
+)
+
+// healthCheckTimeout bounds each dependency check below so a stalled Mongo
+// operation fails the health check instead of hanging past the caller's
+// (e.g. a Kubernetes readiness probe's) own timeout indefinitely.
+const healthCheckTimeout = 5 * time.Second
+
+func HealthHandler(c context.Context) vo.HealthResponseVO <span class="cov0" title="0">{
+        var messages []string
+        errorCount := 0
+
+        listCtx, cancel := context.WithTimeout(c, healthCheckTimeout)
+        defer cancel()
+        _, span := otel.Tracer("health").Start(listCtx, "list-collections")
+        collections, err := database.Db.ListCollectionNames(listCtx, bson.D{})
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("health check: list-collections failed", "database", database.Db.Name(), "error", err.Error())
+                messages = append(messages, err.Error())
+                errorCount += 1
+        }</span>
+
+        <span class="cov0" title="0">pingCtx, cancel := context.WithTimeout(c, healthCheckTimeout)
+        defer cancel()
+        start := time.Now()
+        _, span = otel.Tracer("health").Start(pingCtx, "ping-database")
+        err = database.Db.Client().Ping(pingCtx, readpref.Primary())
+        span.End()
+        duration := time.Since(start)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("health check: ping-database failed", "database", database.Db.Name(), "duration", duration.String(), "error", err.Error())
+                messages = append(messages, err.Error())
+                errorCount += 1
+        }</span>
+
+        <span class="cov0" title="0">return vo.HealthResponseVO{
+                Database:    database.Db.Name(),
+                Ping:        fmt.Sprintf("%dms", duration.Milliseconds()),
+                Collections: collections,
+                Messages:    messages,
+                Errors:      errorCount,
+        }</span>
+}
+
+func PingHandler() vo.PingResponseVO <span class="cov8" title="1">{
+        hostname, _ := os.Hostname()
+        return vo.PingResponseVO{
+                Date:     time.Now(),
+                Hostname: hostname,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package tracing
+
+import (
+        "context"
+        "fmt"
+
+        "github.com/sweetrpg/api-core.go/util"
+        "go.opentelemetry.io/otel"
+        "go.opentelemetry.io/otel/attribute"
+        oteltrace "go.opentelemetry.io/otel/trace"
+)
+
+func BuildSpanWithParams(c context.Context, tracerName string, spanName string, params util.QueryParams) oteltrace.Span <span class="cov0" title="0">{
+
+        pageItems := make([]string, 0, 2)
+        pageItems = append(pageItems, fmt.Sprintf("start=%d", params.Start))
+        pageItems = append(pageItems, fmt.Sprintf("limit=%d", params.Limit))
+
+        sortItems := make([]string, 0, len(params.Sort))
+        for _, v := range params.Sort </span><span class="cov0" title="0">{
+                sortItems = append(sortItems, fmt.Sprintf("%s=%d", v.Field, v.Order))
+        }</span>
+
+        <span class="cov0" title="0">projItems := make([]string, 0, len(params.Projection))
+        for _, v := range params.Projection </span><span class="cov0" title="0">{
+                projItems = append(projItems, fmt.Sprintf("%s=%v", v.Field, v.Inclusion))
+        }</span>
+
+        <span class="cov0" title="0">filterItems := make([]string, 0, len(params.Filter))
+        for _, v := range params.Filter </span><span class="cov0" title="0">{
+                filterItems = append(filterItems, fmt.Sprintf("%s-%v-%v", v.Field, v.Operation, v.Value))
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer(tracerName).Start(c, spanName,
+                oteltrace.WithAttributes(attribute.StringSlice("fields", projItems)),
+                oteltrace.WithAttributes(attribute.StringSlice("sort", sortItems)),
+                oteltrace.WithAttributes(attribute.StringSlice("filter", filterItems)),
+                oteltrace.WithAttributes(attribute.StringSlice("page", pageItems)))
+
+        return span</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package tracing
+
+import (
+        "context"
+        "fmt"
+        "os"
+
+        "github.com/sweetrpg/api-core.go/constants"
+        "github.com/sweetrpg/common.go/logging"
+        "go.opentelemetry.io/otel"
+        "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+        "go.opentelemetry.io/otel/propagation"
+        "go.opentelemetry.io/otel/sdk/resource"
+        sdktrace "go.opentelemetry.io/otel/sdk/trace"
+        semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
+        "go.opentelemetry.io/otel/trace"
+)
+
+var Tracer trace.Tracer
+
+var tp *sdktrace.TracerProvider
+var ctx context.Context
+
+func newExporter(ctx context.Context) (sdktrace.SpanExporter, error) <span class="cov0" title="0">{
+        // Your preferred exporter: console, jaeger, zipkin, OTLP, etc.
+        exporter, err := otlptracehttp.New(ctx)
+        // url := os.Getenv(constants.ZIPKIN_ENDPOINT)
+        // exporter, err := zipkin.New(url)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Error while setting up Zipkin exporter", "error", err.Error())
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return exporter, nil</span>
+}
+
+func newTraceProvider(exp sdktrace.SpanExporter, serviceName string) *sdktrace.TracerProvider <span class="cov0" title="0">{
+        // Ensure default SDK resources and the required service name are set. Schemaless (not
+        // NewWithAttributes(semconv.SchemaURL, ...)) deliberately: resource.Default()'s own schema
+        // version is whatever the otel/sdk release bundles internally, which doesn't necessarily
+        // match whatever semconv package version is pinned here - a mismatch makes resource.Merge
+        // panic on every startup ("conflicting Schema URL"). An empty schema URL merges with any
+        // other schema without conflict, so this is future-proof against the sdk bumping its own
+        // bundled semconv version out from under this pin.
+        r, err := resource.Merge(
+                resource.Default(),
+                resource.NewSchemaless(
+                        semconv.ServiceName(serviceName),
+                ),
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        <span class="cov0" title="0">return sdktrace.NewTracerProvider(
+                sdktrace.WithBatcher(exp),
+                sdktrace.WithResource(r),
+        )</span>
+}
+func SetupTracing(serviceName string) <span class="cov0" title="0">{
+        ctx = context.Background()
+
+        exp, err := newExporter(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error(fmt.Sprintf("Failed to initialize exporter: %v", err))
+        }</span>
+
+        // Create a new tracer provider with a batch span processor and the given exporter.
+        <span class="cov0" title="0">tp = newTraceProvider(exp, serviceName)
+
+        otel.SetTracerProvider(tp)
+
+        // Without a global propagator, otel.GetTextMapPropagator() defaults to a no-op - both
+        // otelgin.Middleware's inbound header extraction AND otelhttp's outbound header injection
+        // read from this, so without it neither incoming nor outgoing trace context ever actually
+        // propagates, despite the middleware/transport being wired up correctly everywhere else.
+        // W3C TraceContext matches the Swift/Rust frontends' own propagators.
+        otel.SetTextMapPropagator(propagation.TraceContext{})
+
+        // Finally, set the tracer that can be used for this package.
+        name := os.Getenv(constants.TRACING_NAME)
+        Tracer = tp.Tracer(name)</span>
+}
+
+func TeardownTracing() <span class="cov0" title="0">{
+        _ = tp.Shutdown(ctx)
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package util
+
+import (
+        "regexp"
+        "strings"
+
+        "github.com/sweetrpg/common.go/logging"
+
+        "go.mongodb.org/mongo-driver/bson"
+)
+
+func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, projection bson.D) <span class="cov10" title="11">{
+        logging.Logger.Debug("Converting query params to BSON", "params", params)
+
+        for _, v := range params.Filter </span><span class="cov7" title="6">{
+                logging.Logger.Debug("Processing filter", "field", v.Field, "operation", v.Operation)
+                operation := "$eq"
+                if v.Operation != nil </span><span class="cov5" title="3">{
+                        operation = *v.Operation
+                }</span>
+
+                <span class="cov7" title="6">var clause bson.D
+                if operation == "$regex" </span><span class="cov3" title="2">{
+                        // contains: a case-insensitive substring match. The client value is the pattern;
+                        // $options "i" is fixed here, never client-supplied.
+                        clause = bson.D{{Key: "$regex", Value: regexPattern(v.Value)}, {Key: "$options", Value: "i"}}
+                }</span> else<span class="cov6" title="4"> {
+                        clause = bson.D{{Key: operation, Value: v.Value}}
+                }</span>
+                <span class="cov7" title="6">filter = append(filter, bson.E{Key: v.Field, Value: clause})</span>
+        }
+
+        <span class="cov10" title="11">for _, v := range params.Sort </span><span class="cov3" title="2">{
+                logging.Logger.Debug("Processing sort", "field", v.Field, "order", v.Order)
+                sort = append(sort, bson.E{Key: v.Field, Value: v.Order})
+        }</span>
+
+        <span class="cov10" title="11">for _, v := range params.Projection </span><span class="cov7" title="6">{
+                logging.Logger.Debug("Processing projection", "field", v.Field, "inclusion", v.Inclusion)
+                inclusion := 0
+                if v.Inclusion </span><span class="cov7" title="5">{
+                        inclusion = 1
+                }</span>
+                <span class="cov7" title="6">projection = append(projection, bson.E{Key: v.Field, Value: inclusion})</span>
+        }
+
+        <span class="cov10" title="11">return</span>
+}
+
+// regexPattern reduces a filter's value list to a single $regex pattern string. A contains
+// filter normally carries exactly one value; multiple values (filter[f][contains]=a,b) become a
+// regex alternation so the match still means "any of". Each value is regexp.QuoteMeta-escaped:
+// "contains" is a literal case-insensitive substring match (design intent), the client is not
+// meant to supply regex syntax, and an unescaped client pattern is a server-side ReDoS vector
+// against the shared database.
+func regexPattern(values []string) string <span class="cov3" title="2">{
+        quoted := make([]string, len(values))
+        for i, v := range values </span><span class="cov3" title="2">{
+                quoted[i] = regexp.QuoteMeta(v)
+        }</span>
+        <span class="cov3" title="2">return strings.Join(quoted, "|")</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package util
+
+import (
+        "os"
+        "strconv"
+)
+
+// GetEnv returns the value of the named environment variable, or fallback when it is unset or
+// empty.
+func GetEnv(name, fallback string) string <span class="cov8" title="1">{
+        if v, ok := os.LookupEnv(name); ok &amp;&amp; v != "" </span><span class="cov8" title="1">{
+                return v
+        }</span>
+        <span class="cov0" title="0">return fallback</span>
+}
+
+// GetEnvInt returns the named environment variable parsed as an int, or fallback when it is
+// unset, empty, or not a valid integer.
+func GetEnvInt(name string, fallback int) int <span class="cov0" title="0">{
+        v, ok := os.LookupEnv(name)
+        if !ok || v == "" </span><span class="cov0" title="0">{
+                return fallback
+        }</span>
+        <span class="cov0" title="0">n, err := strconv.Atoi(v)
+        if err != nil </span><span class="cov0" title="0">{
+                return fallback
+        }</span>
+        <span class="cov0" title="0">return n</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package util
+
+import (
+        "fmt"
+        "math"
+        "strings"
+
+        "github.com/sweetrpg/api-core.go/constants"
+        "github.com/sweetrpg/common.go/logging"
+        dbconstants "github.com/sweetrpg/mongodb.go/constants"
+        options "go.jtlabs.io/query"
+)
+
+type Sort struct {
+        Field string
+        Order int
+}
+
+type Filter struct {
+        Field     string
+        Operation *string
+        Value     []string
+}
+
+type Projection struct {
+        Field     string
+        Inclusion bool
+}
+
+type QueryParams struct {
+        Start      int64
+        Limit      int
+        Sort       []Sort
+        Filter     []Filter
+        Projection []Projection
+}
+
+// filterOperators is the fixed allow-list of client-facing filter operators, each mapped to the
+// one Mongo operator it is allowed to produce. A client-supplied operator segment is only ever a
+// key into this map - it never reaches a bson.D as a literal operator string, which is what
+// keeps a per-field operator syntax from also opening $where/$expr/arbitrary-operator injection.
+var filterOperators = map[string]string{
+        "eq":       "$eq",
+        "contains": "$regex",
+        "in":       "$in",
+}
+
+// maxFilterValueLen bounds a single filter value's length. A contains filter builds a $regex
+// scanned per document on the shared database; an overlong value is rejected (400) rather than
+// handed to the query planner. 128 is generous for any real name/title search.
+const maxFilterValueLen = 128
+
+// validFieldName rejects a field (or sort key) that could reach a Mongo query as something
+// other than a plain document path: a segment beginning with "$" (which would put $expr/$where/
+// $or/... in operator position) or an empty segment (a leading/trailing/doubled dot). Interior
+// dots are allowed - they are legitimate nested-field notation (e.g. "tags.value"). A leading
+// "-" is allowed: it is the descending-sort marker, stripped downstream.
+func validFieldName(name string) bool <span class="cov9" title="25">{
+        if name == "" </span><span class="cov0" title="0">{
+                return false
+        }</span>
+        <span class="cov9" title="25">for _, seg := range strings.Split(strings.TrimPrefix(name, "-"), ".") </span><span class="cov9" title="27">{
+                if seg == "" || strings.HasPrefix(seg, "$") </span><span class="cov4" title="4">{
+                        return false
+                }</span>
+        }
+        <span class="cov9" title="21">return true</span>
+}
+
+// parseFilterKey splits a raw filter key from the querystring parser into its field name and, if
+// present, its Mongo operator. The bare form "field" (from filter[field]=value) returns a nil
+// operator, preserving the historical default-to-$eq behavior. The operator form "field][seg"
+// (from filter[field][seg]=value) maps seg through filterOperators; an unrecognized seg is an
+// error, surfaced by callers as a 400 rather than falling back to $eq. More than one operator
+// segment is malformed. A field name that isn't a plain document path (a "$"-prefixed or empty
+// segment) is rejected regardless of operator.
+func parseFilterKey(key string) (field string, operation *string, err error) <span class="cov8" title="15">{
+        parts := strings.Split(key, "][")
+        switch len(parts) </span>{
+        case 1:<span class="cov5" title="5">
+                if !validFieldName(parts[0]) </span><span class="cov0" title="0">{
+                        return "", nil, fmt.Errorf("invalid filter field %q", parts[0])
+                }</span>
+                <span class="cov5" title="5">return parts[0], nil, nil</span>
+        case 2:<span class="cov7" title="10">
+                if !validFieldName(parts[0]) </span><span class="cov2" title="2">{
+                        return "", nil, fmt.Errorf("invalid filter field %q", parts[0])
+                }</span>
+                <span class="cov6" title="8">mongoOp, ok := filterOperators[parts[1]]
+                if !ok </span><span class="cov1" title="1">{
+                        return "", nil, fmt.Errorf("unsupported filter operator %q on field %q", parts[1], parts[0])
+                }</span>
+                <span class="cov6" title="7">return parts[0], &amp;mongoOp, nil</span>
+        default:<span class="cov0" title="0">
+                return "", nil, fmt.Errorf("malformed filter key %q", key)</span>
+        }
+}
+
+// GetQueryParams parses a raw querystring into paging/sort/filter/projection parameters. It
+// returns an error for a filter that names an operator outside filterOperators, so a list
+// handler can answer 400 instead of silently ignoring or mishandling the filter.
+func GetQueryParams(query string) (QueryParams, error) <span class="cov10" title="30">{
+        logging.Logger.Debug("parsing query string", "query", query)
+
+        opt, _ := options.FromQuerystring(query)
+        logging.Logger.Debug("options from query string", "opt", opt)
+
+        var sortFields []Sort // bson.D
+        for _, v := range opt.Sort </span><span class="cov4" title="4">{
+                logging.Logger.Debug("sort field", "v", v)
+                if !validFieldName(v) </span><span class="cov1" title="1">{
+                        return QueryParams{}, fmt.Errorf("invalid sort field %q", v)
+                }</span>
+                <span class="cov3" title="3">sortFields = append(sortFields, Sort{v, 1} /*bson.E{v, 1}*/)</span>
+        }
+
+        <span class="cov9" title="29">var filters []Filter // bson.D
+        for k, v := range opt.Filter </span><span class="cov8" title="15">{
+                logging.Logger.Debug("filter", "k", k, "v", v)
+                field, operation, err := parseFilterKey(k)
+                if err != nil </span><span class="cov3" title="3">{
+                        return QueryParams{}, err
+                }</span>
+                <span class="cov7" title="12">for _, val := range v </span><span class="cov7" title="12">{
+                        if len(val) &gt; maxFilterValueLen </span><span class="cov1" title="1">{
+                                return QueryParams{}, fmt.Errorf(
+                                        "filter value on field %q exceeds %d characters", field, maxFilterValueLen)
+                        }</span>
+                        // An empty contains value builds {$regex: ""}, which matches every document - a free
+                        // full-collection scan trigger. Reject it; a caller wanting "no filter" omits the key.
+                        <span class="cov7" title="11">if val == "" &amp;&amp; operation != nil &amp;&amp; *operation == "$regex" </span><span class="cov1" title="1">{
+                                return QueryParams{}, fmt.Errorf("empty contains value on field %q", field)
+                        }</span>
+                }
+                <span class="cov7" title="10">filters = append(filters, Filter{Field: field, Operation: operation, Value: v})</span>
+        }
+
+        <span class="cov9" title="24">var proj []Projection // bson.D
+        for _, v := range opt.Fields </span><span class="cov5" title="6">{
+                logging.Logger.Debug("projection", "v", v)
+                if !validFieldName(v) </span><span class="cov1" title="1">{
+                        return QueryParams{}, fmt.Errorf("invalid projection field %q", v)
+                }</span>
+                <span class="cov5" title="5">proj = append(proj, Projection{v, true} /*bson.E{v, 1}*/)</span>
+        }
+
+        <span class="cov9" title="23">limit := opt.Page[constants.PageLimitOption]
+        if limit == 0 </span><span class="cov8" title="16">{
+                limit = dbconstants.QueryDefaultSize
+        }</span>
+
+        <span class="cov9" title="23">params := QueryParams{
+                Start:      int64(math.Max(0, float64(opt.Page[constants.PageStartOption]))),
+                Limit:      int(math.Max(1, math.Min(float64(dbconstants.QueryMaxSize), float64(limit)))),
+                Sort:       sortFields,
+                Filter:     filters,
+                Projection: proj,
+        }
+
+        logging.Logger.Debug("final params", "params", params)
+        return params, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package util
+
+import (
+        "fmt"
+        "os"
+        "time"
+
+        "github.com/gomodule/redigo/redis"
+
+        "github.com/sweetrpg/api-core.go/constants"
+        "github.com/sweetrpg/common.go/logging"
+)
+
+// redisPoolConnectTimeout bounds a dial so a stalled Redis connection fails fast rather than
+// hanging past a caller's own (e.g. readiness-probe) timeout.
+const redisPoolConnectTimeout = 5 * time.Second
+
+// RedisPool builds a redigo connection pool from REDIS_HOST / REDIS_PORT / REDIS_PASS, for use
+// as the backing store of the shared per-client rate limiter (and any other Redis need a
+// service has). It returns nil when REDIS_HOST is unset, so a service with no Redis configured
+// runs without the dependency - callers that require Redis (e.g. ratelimit.Middleware) must
+// treat a nil pool as a fatal misconfiguration, per the fail-closed contract.
+func RedisPool() *redis.Pool <span class="cov10" title="2">{
+        host, found := os.LookupEnv(constants.REDIS_HOST)
+        if !found || host == "" </span><span class="cov1" title="1">{
+                logging.Logger.Warn("REDIS_HOST is not set; no Redis pool created")
+                return nil
+        }</span>
+
+        <span class="cov1" title="1">port := GetEnv(constants.REDIS_PORT, "6379")
+        pass := os.Getenv(constants.REDIS_PASS)
+        addr := fmt.Sprintf("%s:%s", host, port)
+
+        return &amp;redis.Pool{
+                MaxIdle:     3,
+                IdleTimeout: 240 * time.Second,
+                Dial: func() (redis.Conn, error) </span><span class="cov0" title="0">{
+                        c, err := redis.Dial("tcp", addr, redis.DialConnectTimeout(redisPoolConnectTimeout))
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+                        <span class="cov0" title="0">if pass != "" </span><span class="cov0" title="0">{
+                                if _, err := c.Do("AUTH", pass); err != nil </span><span class="cov0" title="0">{
+                                        _ = c.Close()
+                                        return nil, err
+                                }</span>
+                        }
+                        <span class="cov0" title="0">return c, nil</span>
+                },
+        }
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
