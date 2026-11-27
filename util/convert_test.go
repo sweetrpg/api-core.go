@@ -89,7 +89,7 @@ func (suite *ConvertTestSuite) TestConvertFilterParams() {
 
 	assert.Equal(suite.T(), 1, len(filter))
 	assert.EqualValues(suite.T(), "baz", filter[0].Key)
-	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: []string{"1"}}}, filter[0].Value)
+	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: "1"}}, filter[0].Value)
 }
 
 func (suite *ConvertTestSuite) TestConvertProjectionParams() {
@@ -131,7 +131,7 @@ func (suite *ConvertTestSuite) TestConvertAllParams() {
 
 	assert.Equal(suite.T(), 1, len(filter))
 	assert.EqualValues(suite.T(), "baz", filter[0].Key)
-	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: []string{"1"}}}, filter[0].Value)
+	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: "1"}}, filter[0].Value)
 
 	assert.Equal(suite.T(), 1, len(sort))
 	assert.EqualValues(suite.T(), "bar", sort[0].Key)
@@ -199,7 +199,7 @@ func (suite *ConvertTestSuite) TestConvertBareFilterStillEq() {
 
 	assert.Equal(suite.T(), 1, len(filter))
 	assert.EqualValues(suite.T(), "title", filter[0].Key)
-	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: []string{"Dune"}}}, filter[0].Value)
+	assert.EqualValues(suite.T(), bson.D{{Key: "$eq", Value: "Dune"}}, filter[0].Value)
 }
 
 // A contains value with regex metacharacters is escaped, so it matches literally and cannot
@@ -217,6 +217,29 @@ func (suite *ConvertTestSuite) TestConvertContainsEscapesRegexMetacharacters() {
 	assert.EqualValues(suite.T(),
 		bson.D{{Key: "$regex", Value: `\(a\+\)\+\$`}, {Key: "$options", Value: "i"}},
 		filter[0].Value)
+}
+
+// Equality must compare scalars: {$eq: ["x"]} never matches a string field.
+func (suite *ConvertTestSuite) TestConvertEqualityValues() {
+	logging.Init()
+
+	cases := []struct{ query, want string }{
+		{"filter[tags.name]=PDF", `{"tags.name":{"$eq":"PDF"}}`},
+		{"filter[tags.name][eq]=PDF", `{"tags.name":{"$eq":"PDF"}}`},
+		{"filter[title]=", `{"title":{"$eq":""}}`},
+		{"filter[tags.name]=PDF,Print", `{"tags.name":{"$in":["PDF","Print"]}}`},
+		{"filter[tags.name][eq]=PDF,Print", `{"tags.name":{"$in":["PDF","Print"]}}`},
+		{"filter[tags.name][in]=PDF", `{"tags.name":{"$in":["PDF"]}}`},
+	}
+	for _, tc := range cases {
+		params, err := GetQueryParams("http://localhost:1234/endpoint?" + tc.query)
+		assert.NoError(suite.T(), err, tc.query)
+
+		filter, _, _ := ConvertQueryParams(params)
+		doc, err := bson.MarshalExtJSON(filter, false, false)
+		assert.NoError(suite.T(), err, tc.query)
+		assert.JSONEq(suite.T(), tc.want, string(doc), tc.query)
+	}
 }
 
 func TestConvertTestSuite(t *testing.T) {

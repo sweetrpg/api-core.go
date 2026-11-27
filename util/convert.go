@@ -24,6 +24,8 @@ func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, project
 			// contains: a case-insensitive substring match. The client value is the pattern;
 			// $options "i" is fixed here, never client-supplied.
 			clause = bson.D{{Key: "$regex", Value: regexPattern(v.Value)}, {Key: "$options", Value: "i"}}
+		} else if operation == "$eq" {
+			clause = equalityClause(v.Value)
 		} else {
 			clause = bson.D{{Key: operation, Value: v.Value}}
 		}
@@ -45,6 +47,15 @@ func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, project
 	}
 
 	return
+}
+
+// equalityClause compares one value as a scalar, since {$eq: [x]} matches only an array field.
+// Several values (filter[f]=a,b) mean "any of".
+func equalityClause(values []string) bson.D {
+	if len(values) == 1 {
+		return bson.D{{Key: "$eq", Value: values[0]}}
+	}
+	return bson.D{{Key: "$in", Value: values}}
 }
 
 // regexPattern reduces a filter's value list to a single $regex pattern string. A contains
