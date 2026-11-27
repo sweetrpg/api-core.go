@@ -20,13 +20,14 @@ func ConvertQueryParams(params QueryParams) (filter bson.D, sort bson.D, project
 		}
 
 		var clause bson.D
-		if operation == "$regex" {
+		switch operation {
+		case "$regex":
 			// contains: a case-insensitive substring match. The client value is the pattern;
 			// $options "i" is fixed here, never client-supplied.
 			clause = bson.D{{Key: "$regex", Value: regexPattern(v.Value)}, {Key: "$options", Value: "i"}}
-		} else if operation == "$eq" {
+		case "$eq":
 			clause = equalityClause(v.Value)
-		} else {
+		default:
 			clause = bson.D{{Key: operation, Value: v.Value}}
 		}
 		filter = append(filter, bson.E{Key: v.Field, Value: clause})
