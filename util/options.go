@@ -8,7 +8,6 @@ import (
 	"github.com/sweetrpg/api-core.go/constants"
 	"github.com/sweetrpg/common.go/logging"
 	dbconstants "github.com/sweetrpg/mongodb.go/constants"
-	options "go.jtlabs.io/query"
 )
 
 type Sort struct {
@@ -102,11 +101,14 @@ func parseFilterKey(key string) (field string, operation *string, err error) {
 func GetQueryParams(query string) (QueryParams, error) {
 	logging.Logger.Debug("parsing query string", "query", query)
 
-	opt, _ := options.FromQuerystring(query)
+	opt, err := parseQuery(query)
+	if err != nil {
+		return QueryParams{}, err
+	}
 	logging.Logger.Debug("options from query string", "opt", opt)
 
 	var sortFields []Sort // bson.D
-	for _, v := range opt.Sort {
+	for _, v := range opt.sort {
 		logging.Logger.Debug("sort field", "v", v)
 		if !validFieldName(v) {
 			return QueryParams{}, fmt.Errorf("invalid sort field %q", v)
@@ -115,7 +117,7 @@ func GetQueryParams(query string) (QueryParams, error) {
 	}
 
 	var filters []Filter // bson.D
-	for k, v := range opt.Filter {
+	for k, v := range opt.filter {
 		logging.Logger.Debug("filter", "k", k, "v", v)
 		field, operation, err := parseFilterKey(k)
 		if err != nil {
@@ -136,7 +138,7 @@ func GetQueryParams(query string) (QueryParams, error) {
 	}
 
 	var proj []Projection // bson.D
-	for _, v := range opt.Fields {
+	for _, v := range opt.fields {
 		logging.Logger.Debug("projection", "v", v)
 		if !validFieldName(v) {
 			return QueryParams{}, fmt.Errorf("invalid projection field %q", v)
@@ -144,13 +146,13 @@ func GetQueryParams(query string) (QueryParams, error) {
 		proj = append(proj, Projection{v, true} /*bson.E{v, 1}*/)
 	}
 
-	limit := opt.Page[constants.PageLimitOption]
+	limit := opt.page[constants.PageLimitOption]
 	if limit == 0 {
 		limit = dbconstants.QueryDefaultSize
 	}
 
 	params := QueryParams{
-		Start:      int64(math.Max(0, float64(opt.Page[constants.PageStartOption]))),
+		Start:      int64(math.Max(0, float64(opt.page[constants.PageStartOption]))),
 		Limit:      int(math.Max(1, math.Min(float64(dbconstants.QueryMaxSize), float64(limit)))),
 		Sort:       sortFields,
 		Filter:     filters,

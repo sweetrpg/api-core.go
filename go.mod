@@ -12,7 +12,6 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/sweetrpg/common.go v0.0.14
 	github.com/sweetrpg/mongodb.go v0.0.191
-	go.jtlabs.io/query v1.6.1
 	go.mongodb.org/mongo-driver v1.17.9
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.44.0

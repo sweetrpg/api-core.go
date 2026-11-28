@@ -169,8 +169,6 @@ github.com/yuin/gopher-lua v1.1.1 h1:kYKnWBjvbNP4XLT3+bPEwAXJx262OhaHDWDVOPjL46M
 github.com/yuin/gopher-lua v1.1.1/go.mod h1:GBR0iDaNXjAgGg9zfCvksxSRnQx76gclCIb7kdAd1Pw=
 github.com/zerodha/logf v0.5.5 h1:AhxHlixHNYwhFjvlgTv6uO4VBKYKxx2I6SbHoHtWLBk=
 github.com/zerodha/logf v0.5.5/go.mod h1:HWpfKsie+WFFpnUnUxelT6Z0FC6xu9+qt+oXNMPg6y8=
-go.jtlabs.io/query v1.6.1 h1:AldVImTH2RR5M9h8fCdZNyN7bew5JMVuDPelUQnP0DE=
-go.jtlabs.io/query v1.6.1/go.mod h1:7vfCXa5f0HngPLHYCbmVmGTmu72xrdmhCwmYu1HybIU=
 go.mongodb.org/mongo-driver v1.17.9 h1:IexDdCuuNJ3BHrELgBlyaH9p60JXAvdzWR128q+U5tU=
 go.mongodb.org/mongo-driver v1.17.9/go.mod h1:LlOhpH5NUEfhxcAwG0UEkMqwYcc4JU18gtCdGudk/tQ=
 go.mongodb.org/mongo-driver/v2 v2.5.0 h1:yXUhImUjjAInNcpTcAlPHiT7bIXhshCTL3jVBkF3xaE=
